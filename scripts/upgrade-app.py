@@ -1,0 +1,10 @@
+from pathlib import Path
+p=Path('dist/app.js');s=p.read_text()
+s=s.replace("function openTraining(id,t){", "function taskSet(id,t){const tr=tierRecord(id,t);return tr.round===1?D.banks[id].alternate[t]:D.banks[id].tiers[t];}\nfunction openTraining(id,t){")
+s=s.replace('${bank.tiers[t].map((q,i)=>questionHTML(q,i,tr.answers[i])).join(\'\')}', '${taskSet(id,t).map((q,i)=>questionHTML(q,i,tr.answers[i])).join(\'\')}')
+s=s.replace("questions=D.banks[id].tiers[t]", "questions=taskSet(id,t)").replace("q=D.banks[id].tiers[t][i]", "q=taskSet(id,t)[i]").replace("qs=D.banks[id].tiers[t]", "qs=taskSet(id,t)").replace("const q=D.banks[id]?.tiers[t]?.[j]", "const q=(tr.round===1?D.banks[id]?.alternate[t]:D.banks[id]?.tiers[t])?.[j]").replace("const q=D.banks[id]?.tiers[t]?.[i]", "const q=(tr.round===1?D.banks[id]?.alternate[t]:D.banks[id]?.tiers[t])?.[i]")
+s=s.replace('<div class="notice">本阶6项任务，不计时。','<div class="notice">${tr.round===1?\'正在做第二组独立复查题。\':\'正在做首轮诊断题。\'}本阶6项任务，不计时。')
+s=s.replace('<div class="savebar"><small>回答自动暂存', '<div class="actions"><button id="lessonBtn">先补一个小环节</button>${tr.round!==1?\'<button id="newRound">换一组题独立检查</button>\':\'\'}</div><div class="savebar"><small>回答自动暂存')
+s=s.replace("if(e.target.closest('#finishTier'))finishTier(id,t);", "if(e.target.closest('#lessonBtn'))lessonModal(id,t);if(e.target.closest('#newRound')){const r=rec(id);r.archive??=[];r.archive.push({t,record:JSON.parse(JSON.stringify(tr)),at:Date.now()});r.tiers[t]={answers:{},passed:false,round:1};save();openTraining(id,t);toast('原尝试已归档，新题从独立尝试开始。');}if(e.target.closest('#finishTier'))finishTier(id,t);")
+s=s.replace("closeModal();renderDetail();toast(tr.passed?", "closeModal();renderDetail();feedbackModal(id,t);toast(tr.passed?")
+p.write_text(s)
