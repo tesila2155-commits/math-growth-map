@@ -1,0 +1,55 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>数学能力生长 V2.3 · 乘法分配律</title><style>
+:root{font-family:"Kaiti SC","STKaiti","KaiTi",system-ui,sans-serif;color:#283c3a;background:#f5f6f2}*{box-sizing:border-box}body{margin:0}.wrap{max-width:680px;margin:auto;padding:20px 16px 80px}header{padding:18px 0;border-bottom:1px solid #d9e2db}small{color:#71827a}h1{font-size:25px;margin:8px 0}h2{font-size:23px}p{line-height:1.8}.panel{background:#fff;border:1px solid #e0e6df;border-radius:20px;padding:24px;margin-top:20px;box-shadow:0 3px 18px #1a42300b}.pill{display:inline-block;border-radius:30px;background:#e9f1eb;color:#477363;padding:7px 12px;font-size:13px}.progress{height:7px;border-radius:10px;background:#e5eae6;overflow:hidden;margin:14px 0}.progress i{display:block;height:100%;background:#7caa91;transition:width .3s}.question{font-size:25px;line-height:1.6;white-space:pre-wrap;margin:26px 0}button{font:inherit;cursor:pointer;border:1px solid #cbd8cf;border-radius:14px;padding:13px 17px;background:#fff;color:#315447}button.primary{background:#537d68;color:white;border-color:#537d68}button:disabled{opacity:.4}button.choice{display:block;width:100%;text-align:left;margin:10px 0}button.choice:active{background:#e5f1e8}.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:24px}.note{background:#f1f6f0;border-radius:14px;padding:14px;line-height:1.7}.muted{color:#71827a}.visual{border:1px dashed #c6d7cc;border-radius:14px;padding:16px;text-align:center;font-size:20px;line-height:1.9;background:#fafcf9}.ok{color:#34724e}.bad{color:#b45b4b}input{width:100%;font:inherit;font-size:25px;padding:15px;border:1px solid #cbd8cf;border-radius:12px}.hide{display:none}footer{font-size:12px;color:#8b9790;margin-top:25px}
+</style></head><body><main class="wrap"><header><small>数学能力生长与自主学习系统</small><h1>乘法分配律 · V2.3 分阶训练</h1><small>从看懂结构，到独立迁移｜30题候选题库</small></header><div id="app"></div><footer>无需登录 · 学习记录仅保存在当前浏览器 · 本版本为教学演示</footer></main><script>
+const STAGES=[["A 前置诊断","先检查乘法与加法的基本关系",4],["B 多种表达","同一个数量关系，用不同方式表示",5],["C 同构辨认","题目变了，结构是否仍然相同",6],["D 边界与反例","分清什么时候能用、什么时候不能用",5],["E 独立识别","不依赖提示，自己找出结构",5],["F 迁移与逆向","在新情境中灵活运用",5]];
+const Q=[
+["3组，每组4个，一共几个？",12,"3×4","4+3","3+3+3","三组四个，乘法表示相同数量的重复。"],
+["4+4+4 等于多少？",12,"3×4","4×4","3+4","三个4相加。"],
+["2×(3+4) 等于多少？",14,"2×3+2×4","2×3+4","2+3×4","括号里有两部分，都需要乘以2。"],
+["3×5+3×2 等于多少？",21,"3×(5+2)","3×5×2","(3+5)×2","共同的因数是3。"],
+["4×(5+2) 等于多少？",28,"4×5+4×2","4×5+2","4×(5×2)","将5和2分别乘4。"],
+["6×(3+2) 等于多少？",30,"6×3+6×2","6×3+2","6×5×2","两个部分都乘6。"],
+["(4+7)×3 等于多少？",33,"4×3+7×3","4+7×3","4×7×3","交换乘法顺序不改变总量。"],
+["5×8+5×2 等于多少？",50,"5×(8+2)","5×8×2","5×10+2","找到共同的5。"],
+["7×(10-2) 等于多少？",56,"7×10-7×2","7×10-2","7×8×2","分配律也适用于减法。"],
+["9×(4+6) 等于多少？",90,"9×4+9×6","9×4+6","9×24","同一个因数分配到两部分。"],
+["8×(5+3) 与哪个式子相等？",64,"8×5+8×3","8×5+3","8+5×3","两项都必须乘8。"],
+["(6+4)×7 与哪个式子相等？",70,"6×7+4×7","6+4×7","6×4×7","共同的因数是7。"],
+["12×5+8×5 可以合并成？",100,"(12+8)×5","12+8×5","12×8×5","提取共同因数5。"],
+["15×(6-2) 等于多少？",60,"15×6-15×2","15×6-2","15×4×2","减去的部分也要乘15。"],
+["4×(9+1) 与 4×9+4 的关系？",40,"相等","前者更大","后者更大","4可以看作4×1。"],
+["5×(3+2) 能否写成 5×3+2？",25,"不能","可以","只在5很小时可以","漏乘了第二部分。"],
+["3×(4×2) 能否直接用加法分配律？",24,"不能，这里是乘法结合","能，结果变大","能，结果变小","括号中是乘法，不是加法。"],
+["7×(8-3) 能否写成 7×8-7×3？",35,"可以","不可以","只有加法能用","减法也满足分配律。"],
+["(2+5)×6 能否写成 2×6+5×6？",42,"可以","不可以","只能把6乘2","两个部分都乘6。"],
+["8×(6+4) 与 8×6+4×8 是否相等？",80,"相等","不相等","无法判断","乘法交换律和分配律可以配合使用。"],
+["19×5 用凑整方法算，结果是？",95,"(20-1)×5","20×5+5","19+5","拆成20减1，再分别乘5。"],
+["25×12 等于多少？",300,"25×(10+2)","25×10+2","25×(10×2)","拆分成容易计算的两部分。"],
+["37×9+63×9 等于多少？",900,"(37+63)×9","37+63×9","100×18","共同因数是9。"],
+["48×11 等于多少？",528,"48×(10+1)","48×10+1","48×10×1","拆成10+1。"],
+["16×99 等于多少？",1584,"16×(100-1)","16×100-1","16×(90-1)","把99变成100-1。"],
+["一排12棵树，左右各5排，共多少棵？",120,"12×(5+5)","12×5+5","12+5×5","左右两部分都按每排12棵计算。"],
+["每盒8支笔，红笔3盒、蓝笔7盒，共几支？",80,"8×(3+7)","8×3+7","8+3×7","同样的每盒数量，可以先合并盒数。"],
+["已知 6×(a+4)=54，a是多少？",5,"54÷6-4","54-6-4","54÷(6-4)","先求括号中的总数，再减4。"],
+["7×18+7×2 等于多少？",140,"7×(18+2)","7×18+2","7×36","识别共同因数7。"],
+["一个长方形长(8+5)厘米、宽4厘米，面积多少？",52,"8×4+5×4","8×4+5","8+5×4","把大长方形分成两个小长方形。"]
+];
+let i=0,answers=[],skipped=0,started=false,feedback="",revealed=false,wrong=0;
+const el=document.getElementById("app"),total=Q.length;
+const store=()=>{try{localStorage.setItem("math-growth-v23-demo",JSON.stringify({i,answers,skipped,started,wrong}))}catch(e){}};
+try{let s=JSON.parse(localStorage.getItem("math-growth-v23-demo")||"null");if(s){i=s.i||0;answers=s.answers||[];skipped=s.skipped||0;started=!!s.started;wrong=s.wrong||0}}catch(e){}
+function stage(n){let x=0;for(let k=0;k<STAGES.length;k++){x+=STAGES[k][2];if(n<x)return k}return 5}
+function escapeHTML(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function start(){started=true;store();render()}
+function reset(){if(!confirm("确定清空当前浏览器的练习记录并重新开始？"))return;i=0;answers=[];skipped=0;started=false;wrong=0;feedback="";revealed=false;store();render()}
+function next(){i++;feedback="";revealed=false;store();render()}
+function skip(){skipped++;next()}
+function check(value){if(feedback)return;let q=Q[i],ok=String(value).trim()===String(q[1]);if(ok){answers.push(i);feedback="正确！你已经识别了这个数量关系。";store();render();setTimeout(()=>{if(feedback&&i<total)next()},950)}else{wrong++;feedback="再观察一下："+q[5];store();render();setTimeout(()=>{feedback="";render()},1800)}}
+function answerChoices(q){let choices=[q[2],q[3],q[4]];let seed=(i*7)%3;choices=[choices[seed],choices[(seed+1)%3],choices[(seed+2)%3]];return choices.map(c=>'<button class="choice" onclick="checkChoice(this)">'+escapeHTML(c)+'</button>').join("")}
+function checkChoice(b){let q=Q[i];if(feedback)return;let correct=b.textContent===q[2];if(correct){answers.push(i);feedback="正确！"+q[5];store();render();setTimeout(()=>{if(feedback&&i<total)next()},1000)}else{wrong++;feedback="再试试。提示："+q[5];store();render();setTimeout(()=>{feedback="";render()},1800)}}
+function render(){if(!started){el.innerHTML='<section class="panel"><span class="pill">自主学习 · 从不会到会</span><h2>用最少必要训练，建立可迁移的数学能力</h2><p>本专题以乘法分配律为例。30道候选题分为六个阶段：前置诊断、表达转换、同构辨认、边界反例、独立识别和迁移应用。</p><div class="note">你可以随时跳过；答对后自动进入下一题；完成后查看学习记录。此版是交互教学演示，不是经过验证的自适应诊断系统。</div><div class="actions"><button class="primary" onclick="start()">开始学习</button><button onclick="reset()">重新开始</button></div></section>';return}
+if(i>=total){el.innerHTML='<section class="panel"><span class="pill">训练完成</span><h2>我的学习记录</h2><p>已答对 <b>'+answers.length+'</b> 道，跳过 <b>'+skipped+'</b> 道，错误尝试 <b>'+wrong+'</b> 次。</p><div class="note">学习不只是做对题目，更重要的是能独立识别结构、解释原因，并在新情境中迁移。建议隔一天再做一次未掌握的题目。</div><div class="actions"><button class="primary" onclick="reset()">重新练习</button></div></section>';return}
+let q=Q[i],s=STAGES[stage(i)],pct=Math.round(i/total*100);el.innerHTML='<section class="panel"><span class="pill">'+s[0]+'</span><small style="float:right">第 '+(i+1)+' / '+total+' 题</small><div class="progress"><i style="width:'+pct+'%"></i></div><p class="muted">'+s[1]+'</p><div class="question">'+escapeHTML(q[0])+'</div><div class="visual">观察数量关系 → 找共同结构 → 选择等价表达</div><p class="muted">请选择正确的表达或计算方法：</p>'+answerChoices(q)+(feedback?'<p class="note '+(feedback.startsWith("正确")?"ok":"bad")+'">'+escapeHTML(feedback)+'</p>':'')+'<div class="actions"><button onclick="reveal()">'+(revealed?"收起提示":"提示")+'</button><button onclick="skip()">跳过此题</button><button onclick="reset()">重置</button></div>'+(revealed?'<p class="note">'+escapeHTML(q[5])+'</p>':'')+'</section>'}
+function reveal(){revealed=!revealed;render()}
+render();
+</script></body></html>
