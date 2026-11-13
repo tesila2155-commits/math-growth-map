@@ -185,7 +185,7 @@ const load=()=>{
  }
  storageSet(STORE,result);return result;
 };
-let db=load(),route={page:'home'}, growthUI={tab:'knowledge',expanded:false,limit:12}, universeUI={view:'nebula',links:'focus',search:'',showLabels:false,cluster:null,step:0,metro:0}, filter={module:'全部',grade:'全部',search:''},draftLegacy=null, abilityGrade=Number(storageGet('math-v41-ability-grade'))||null, universeState={zoom:1,x:0,y:0,selected:null,drag:false};
+let db=load(),route={page:'home'}, growthUI={tab:'knowledge',expanded:false,limit:12}, universeUI={view:'nebula',links:'focus',search:'',showLabels:false,cluster:null,step:0,metro:0,labSplit:3}, filter={module:'全部',grade:'全部',search:''},draftLegacy=null, abilityGrade=Number(storageGet('math-v41-ability-grade'))||null, universeState={zoom:1,x:0,y:0,selected:null,drag:false};
 const cur=()=>db.profiles[db.active];
 const persist=()=>storageSet(STORE,db);
 const navigate=(page,args={})=>{route={page,...args};render();window.scrollTo({top:0,behavior:'auto'});};
@@ -212,7 +212,7 @@ function header(){let tabs=[['home','学习家园'],['universe','知识宇宙'],
 function flowGuide(page){if(page==='home'||page==='profiles')return '';const steps=[['home','选择'],['node','理解'],['session','挑战'],['report','回顾'],['growth','成长']];const current=page==='intro'?'node':page==='universe'||page==='knowledge'||page==='abilities'||page==='ability'?'home':page;let idx=steps.findIndex(x=>x[0]===current);if(idx<0)idx=0;return `<div class="flow-guide" aria-label="学习流程">${steps.map(([key,label],i)=>`<span class="flow-step ${i===idx?'current':''}"><b>${i+1}</b>${label}</span>${i<steps.length-1?'<span class="flow-separator">→</span>':''}`).join('')}</div>`;}
 function render(){if(!$('view'))$('app').innerHTML=header();let html='';switch(route.page){
  case 'home':html=home();break;case 'knowledge':html=knowledge();break;case 'node':html=nodeDetail(route.id);break;case 'abilities':html=abilities();break;case 'ability':html=abilityDetail(route.id);break;case 'intro':html=introPage();break;case 'session':html=sessionPage();break;case 'report':html=sessionReport();break;case 'growth':html=growth();break;case 'universe':html=universePage();break;case 'profiles':html=profilesPage();break;default:html=home();}
- $('view').innerHTML=flowGuide(route.page)+html;document.querySelectorAll('.navitem').forEach(b=>{const active=b.dataset.page===route.page||(route.page==='node'&&b.dataset.page==='knowledge')||(route.page==='ability'&&b.dataset.page==='abilities');b.classList.toggle('active',active);if(active)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');});if(route.page==='node')setTimeout(()=>renderFocusGraph(route.id),0);if(route.page==='universe'&&universeUI.view==='network')setTimeout(setupUniverse,0);
+ $('view').innerHTML=flowGuide(route.page)+html;document.querySelectorAll('.navitem').forEach(b=>{const active=b.dataset.page===route.page||(route.page==='node'&&b.dataset.page==='knowledge')||(route.page==='ability'&&b.dataset.page==='abilities');b.classList.toggle('active',active);if(active)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');});if(route.page==='node')setTimeout(()=>renderFocusGraph(route.id),0);if(route.page==='universe'&&universeUI.view==='nebula')setTimeout(setupUniverse,0);if(route.page==='universe'&&universeUI.view==='lab')setTimeout(setupStoryLab,0);
 }
 function recommended(){const due=getDue();if(due.length)return {title:'有几道题想和你再次见面',subtitle:`${due.length}道题到了复习时间，看看现在能不能独立解决。`,button:'开始复习',type:'review'};
  const p=cur(),attempts=events(),ids=['N12','N18','G07','S04','P07'];
@@ -484,21 +484,71 @@ function v48AreaDemo(split){
 <text id="storyLabA" x="${100+left/2}" y="243" text-anchor="middle" fill="#32684e" font-size="26" font-weight="800">4 × ${split}</text><text id="storyLabB" x="${x+right/2}" y="243" text-anchor="middle" fill="#875f37" font-size="26" font-weight="800">4 × ${10-split}</text>
 <text x="430" y="101" text-anchor="middle" font-size="15" fill="#4b6c59">总宽度 10</text><text x="75" y="242" text-anchor="middle" font-size="16" fill="#456b52" transform="rotate(-90 75 242)">高度 4</text><text x="480" y="402" text-anchor="middle" font-size="16" fill="#7c806a">拖动中间的把手，看看两边变化、整体是否变化</text></svg>`}
 
-function universePage(){
- const selected=node(universeState.selected),lit=D.nodes.filter(n=>knowledgeLit(n.id)),groups=D.knowledgeSections,active=universeUI.cluster;
- const groupName=active!==null?groups[active]:null,groupNodes=active!==null?D.nodes.filter(n=>n.module===groupName):[];
- const edges=selected?D.nodes.flatMap(n=>n.required_prerequisites.includes(selected.id)?[{id:n.id,kind:'后续前置关联'}]:[]).concat(selected.required_prerequisites.map(id=>({id,kind:'前置关系'})),selected.conditional_support.map(id=>({id,kind:'条件性帮助'})),D.edges.filter(e=>e.from===selected.id||e.to===selected.id).map(e=>({id:e.from===selected.id?e.to:e.from,kind:e.kind||'跨领域关联'}))):[];
- return `<div class="heading-kicker">KNOWLEDGE UNIVERSE · CONNECTED</div><div class="row"><h1 class="hero">🌌 我的知识宇宙</h1><span class="pill">🌟 ${lit.length} / ${D.nodes.length}颗星球</span></div><p class="lead">所有知识仍在同一张宇宙中。点开知识群，真的会展开星球；再点一颗星球，继续追踪它与其他领域的联系。</p>
- <div class="ux-breadcrumb"><button data-action="universe-reset">🌌 全部宇宙</button>${groupName?`<span>›</span><strong>${h(groupName)}</strong>`:''}${selected?`<span>›</span><strong>${h(selected.title)}</strong>`:''}</div>
- <div class="cosmos-controls"><input class="input" id="cosmosSearch" placeholder="搜索星球，例如：面积" value="${h(universeUI.search)}"/><button class="mini" data-action="cosmos-find">寻找星球</button><button class="mini" data-action="universe-zoom-in">＋</button><button class="mini" data-action="universe-zoom-out">－</button></div>
- <div class="kv-tabs">${[['tree','🌳 知识生长树'],['ladder','🪜 知识进化阶梯'],['metro','🚇 知识地铁图'],['network','🔗 知识关系网络'],['lab','🔬 知识变形实验室'],['skilltree','🎮 知识技能树']].map(([k,v])=>`<button data-action="kv-view" data-id="${k}" class="${universeUI.view===k?'active':''}">${v}</button>`).join('')}</div>
- ${knowledgeSix()}
- <div class="cosmos-controls"><button class="mini" data-action="cosmos-mode" data-id="focus">聚焦相关路径 ${universeUI.links==='focus'?'✓':''}</button><button class="mini" data-action="cosmos-mode" data-id="all">显示所有连线 ${universeUI.links==='all'?'✓':''}</button><button class="mini" data-action="cosmos-labels">${universeUI.showLabels?'隐藏':'显示'}全部名称</button></div>
- <div class="ux-legend"><span>🟢 前置关系</span><span>🟠 条件性/其他联系</span><span>🔗 跨领域连接保留</span></div>
- ${universeUI.view==='network'?`<div class="cosmos-viewport" id="cosmosViewport" aria-label="知识宇宙地图，点击星系展开"><svg id="cosmosSvg" class="cosmos-svg" viewBox="0 0 1100 780" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="spaceBg"><stop stop-color="#233b62"/><stop offset="1" stop-color="#0a1531"/></radialGradient></defs><rect width="1100" height="780" fill="url(#spaceBg)"/><g id="cosmosWorld"></g></svg></div>`:''}
- ${groupName?`<section class="ux-cluster-panel"><div class="row"><div><span class="pill">🌟 已展开知识星系</span><h2 style="margin:8px 0">${h(groupName)}</h2><p class="quiet">这里是这片星系的全部${groupNodes.length}颗知识星球。点击任意星球查看关系，或继续拖动上方完整宇宙。</p></div><button class="mini" data-action="cosmos-close-cluster">收起星系</button></div><div class="ux-cluster-grid">${groupNodes.map(n=>`<button class="ux-node" data-action="cosmos-focus" data-id="${n.id}"><span style="font-size:21px">${knowledgeLit(n.id)?'🌟':'🪐'}</span><span>${h(n.title)}<br/><small>${n.suggested_grade||'?'}年级参考</small></span></button>`).join('')}</div></section>`:''}
- <section class="card cosmic-detail">${selected?`<div class="row"><h2>🪐 ${h(selected.title)}</h2><span class="pill">${knowledgeLit(selected.id)?'🌟 有点亮证据':'🌱 正在探索'}</span></div><p class="quiet">${h(selected.module)} · 建议${selected.suggested_grade}年级</p><h3>和它连接的知识</h3><div class="cosmos-detail-grid">${edges.slice(0,24).map(e=>`<div class="cosmos-relation"><small>${h(e.kind)}</small><button data-action="cosmos-focus" data-id="${e.id}">${h(node(e.id)?.title||e.id)} →</button></div>`).join('')||'<p class="quiet">还没有记录到直接关系。</p>'}</div><div class="actions"><button class="button" data-action="node" data-id="${selected.id}">进入学习挑战 →</button><button class="button light" data-action="cosmos-clear">退出聚焦</button></div>`:'<h2>轻点上方知识群或星球，开始探索 ✨</h2><p class="quiet">缩小时显示主要知识群，点击后自动放大，并在下方展开具体知识节点。跨领域连接始终保留在同一张网络里。</p>'}</section>`;
+function v48BookPages(kind){
+ return kind==='knowledge'?[['nebula','经典星云图','这片知识宇宙里，藏着哪些星球？'],['tree','知识生长树','它从哪里来，又能长向哪里？'],['ladder','知识进化阶梯','从具体到抽象，关系怎样变得丰富？'],['metro','知识地铁图','不同的知识路径，在哪里相遇？'],['network','知识关系网络','围绕一个知识，能发现什么连接？'],['lab','知识变形实验室','不只看到联系，还要亲手试一试。'],['skilltree','知识技能树','已经探索过什么，下一站想去哪？']]:[['hurdle','能力跨栏赛道','每一栏都是一次真正的能力表现。'],['tree','能力进化树','本领还可以向哪些方向长大？'],['island','能力挑战岛','把本领带进一座座挑战岛。'],['lab','思维变形实验室','亲手变一变，发现思维的秘密。'],['transfer','迁移冒险地图','换个世界，这项本领还能用吗？'],['timeline','能力成长时间轴','看看以前和现在，有什么不同。']];
 }
+
+function v48BookNavigation(kind,idx){
+ const items=v48BookPages(kind),turn='story-turn',goto='story-goto',key=kind;
+ return `<div class="storybook-navigation"><button class="storybook-turn" data-action="${turn}" data-id="${key}:-1" ${idx===0?'disabled':''} aria-label="上一页">← 上一页</button><div class="storybook-dots" role="group" aria-label="跳转页面">${items.map((a,i)=>`<button data-action="${goto}" data-id="${key}:${i}" class="${i===idx?'active':''}" title="${h(a[1])}" aria-label="第${i+1}页：${h(a[1])}" aria-current="${i===idx?'page':'false'}"></button>`).join('')}</div><button class="storybook-turn" data-action="${turn}" data-id="${key}:1" ${idx===items.length-1?'disabled':''} aria-label="下一页">下一页 →</button></div><div class="storybook-footer">← → 翻页 · 或在画面空白处左右轻扫 · 点击画面中的知识节点可以继续探索</div>`;
+}
+
+function v48KnowledgeScene(mode,focus,rel){
+ if(mode==='nebula'){
+  const stars=Array.from({length:190},(_,i)=>{const x=(i*239+37)%1100,y=(i*373+83)%780,r=i%9===0?1.9:.8;return `<circle cx="${x}" cy="${y}" r="${r}" fill="#ecf5ff" opacity="${i%6===0?.65:.2}"/>`}).join('');
+  return `<div class="cosmos-viewport" id="cosmosViewport" aria-label="早期版风格星云，支持拖动和缩放"><svg id="cosmosSvg" class="cosmos-svg" viewBox="0 0 1100 780" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="spaceBg"><stop stop-color="#253b64"/><stop offset=".56" stop-color="#17264a"/><stop offset="1" stop-color="#080e26"/></radialGradient><radialGradient id="violetNebula"><stop stop-color="#9172d0" stop-opacity=".66"/><stop offset="1" stop-color="#9172d0" stop-opacity="0"/></radialGradient><radialGradient id="tealNebula"><stop stop-color="#4aaca5" stop-opacity=".46"/><stop offset="1" stop-color="#4aaca5" stop-opacity="0"/></radialGradient><radialGradient id="amberNebula"><stop stop-color="#c09b68" stop-opacity=".32"/><stop offset="1" stop-color="#c09b68" stop-opacity="0"/></radialGradient><filter id="nebulaSoft"><feGaussianBlur stdDeviation="19"/></filter></defs><rect width="1100" height="780" fill="url(#spaceBg)"/><ellipse cx="324" cy="268" rx="385" ry="214" fill="url(#violetNebula)" filter="url(#nebulaSoft)" transform="rotate(-28 324 268)"/><ellipse cx="758" cy="432" rx="407" ry="232" fill="url(#tealNebula)" filter="url(#nebulaSoft)" transform="rotate(-18 758 432)"/><ellipse cx="700" cy="168" rx="260" ry="166" fill="url(#amberNebula)" filter="url(#nebulaSoft)"/><g>${stars}</g><g id="cosmosWorld"></g></svg></div>`;
+ }
+ if(mode==='tree')return v48Tree(focus,rel);
+ if(mode==='ladder')return v48Ladder(focus,rel);
+ if(mode==='metro')return v48Metro(focus,rel);
+ if(mode==='network')return v48Network(focus,rel);
+ if(mode==='lab'){
+  const n=focus?.title||'';
+  return n.includes('分配律')?v48AreaDemo(universeUI.labSplit||3):`<svg viewBox="0 0 960 500" role="img" aria-label="等待为此知识建立的专属数学变形实验">${v48Defs()}${v48Land()}<rect x="143" y="108" width="674" height="272" rx="32" fill="#fffefa" stroke="#d2e7d4" filter="url(#v48shadow)"/><text x="480" y="203" font-size="44" text-anchor="middle">🔬</text><text x="480" y="254" font-size="21" text-anchor="middle" font-weight="700" fill="#396d51">这个知识的专属实验还在设计</text><text x="480" y="289" text-anchor="middle" font-size="15" fill="#698673">你可以试试乘法分配律的面积分割实验</text></svg>`;
+ }
+ if(mode==='skilltree')return v48SkillTree(focus,rel);
+ return '';
+}
+
+function universePage(){
+ const items=v48BookPages('knowledge'),mode=universeUI.view,idx=Math.max(0,items.findIndex(x=>x[0]===mode)),focus=node(universeState.selected)||node('N12')||D.nodes[0],rel=v48Relations(focus.id),selected=node(universeState.selected),g=universeUI.cluster===null?null:D.knowledgeSections[universeUI.cluster];
+ const groupNodes=g?D.nodes.filter(n=>n.module===g):[];
+ const chip=(x)=>`<button class="storybook-chip" data-action="cosmos-focus" data-id="${h(x.id)}">${knowledgeLit(x.id)?'✦ ':'○ '}${h(x.title)}</button>`;
+ const relation=[...new Map([...rel.up,...rel.down,...rel.others].map(x=>[x.id,x])).values()].slice(0,9);
+ const scene=v48KnowledgeScene(mode,focus,rel);
+ const pageControls=mode==='nebula'?`<div class="storybook-actions"><button class="storybook-chip" data-action="universe-zoom-in">放大 ＋</button><button class="storybook-chip" data-action="universe-zoom-out">缩小 −</button><button class="storybook-chip" data-action="universe-reset">回到全景</button><button class="storybook-chip" data-action="cosmos-mode" data-id="${universeUI.links==='all'?'focus':'all'}">${universeUI.links==='all'?'聚焦连线':'显示全部连线'}</button></div><p class="storybook-help">用手指拖动星空，双指缩放；点击任意星球可以聚焦。星球点亮取决于真实学习证据。</p>`:'';
+ const metro=mode==='metro'?`<div class="storybook-actions">${D.knowledgeSections.map((g,i)=>`<button data-action="story-metro" data-id="${i}" class="storybook-chip ${universeUI.metro===i?'active':''}">${h(g)}</button>`).join('')}</div><p class="storybook-help">地图显示五条领域线路。点击站点聚焦，再在下方查看该站的真实跨领域关联；平行线路不自动表示知识依赖。</p>`:'';
+ const lab=mode==='lab'?(focus.title.includes('分配律')?`<div class="storybook-lab"><div class="equation" id="storyLabEquation">4 × ( ${universeUI.labSplit||3} + ${10-(universeUI.labSplit||3)} ) = 4 × ${universeUI.labSplit||3} + 4 × ${10-(universeUI.labSplit||3)} = 40</div><label for="storyLabRange" class="storybook-help">左右拖动分割线，也可以拉动下方滑块。你会发现什么没有改变？</label><input class="storybook-lab-range" id="storyLabRange" type="range" min="1" max="9" step="1" value="${universeUI.labSplit||3}"/><div class="storybook-evidence"><div class="storybook-stat"><span>左边面积</span><strong id="storyLabLeft">${4*(universeUI.labSplit||3)}</strong></div><div class="storybook-stat"><span>右边面积</span><strong id="storyLabRightVal">${4*(10-(universeUI.labSplit||3))}</strong></div><div class="storybook-stat"><span>合起来</span><strong>40</strong></div></div></div>`:`<button class="button light" data-action="cosmos-focus" data-id="N12">去试试分配律的面积实验 →</button>`):'';
+ const progress=mode==='skilltree'?`<p class="storybook-help">图中亮起的节点有学习记录作为证据。尚未点亮不代表不会，可以自由选择挑战。</p>`:'';
+ return `<div class="heading-kicker">KNOWLEDGE · STORYBOOK V4.8</div><div class="row"><h1 class="hero">🌌 我的知识探索手册</h1><span class="pill">✨ ${D.nodes.filter(n=>knowledgeLit(n.id)).length} / ${D.nodes.length} 颗有记录的知识星球</span></div><p class="lead">从星空启程，翻开不同的图，看看同一个知识还有多少秘密。</p>
+ <div class="storybook-search"><input class="input" id="cosmosSearch" placeholder="寻找知识，例如：分配律" value="${h(universeUI.search)}"/><button class="mini" data-action="cosmos-find">搜索</button></div>
+ <div class="storybook" data-book-root="knowledge"><div class="storybook-top"><span class="storybook-brand">THE MATHEMATICAL ATLAS · VOL. 01</span><span class="storybook-count">第 ${idx+1} 页 / 共 ${items.length} 页（星云封面 + 6种表达）</span></div>
+ <div class="storybook-shell ${bookMotion==='prev'?'storybook-flip-prev':'storybook-flip-next'}" data-book-stage="knowledge"><div class="storybook-heading"><div><span class="storybook-index">CHAPTER ${String(idx+1).padStart(2,'0')} · ${selected?'当前：'+h(selected.title):'示例：'+h(focus.title)}</span><h2>${h(items[idx][1])}</h2><p>${h(items[idx][2])}</p></div><span class="storybook-count">${idx+1} / ${items.length}</span></div>
+ <div class="storybook-illustration ${mode==='nebula'?'storybook-theme-night':''}">${scene}</div>${pageControls}${metro}${lab}${progress}
+ <div class="storybook-detail"><div class="row"><div><strong>🪐 ${h(focus.title)}</strong><p>${h(focus.module)} · 建议${focus.suggested_grade||'?'}年级 · ${selected?'正在探索':'当前示例知识'}</p></div><button class="button" data-action="node" data-id="${h(focus.id)}">进入学习挑战 →</button></div>
+ ${relation.length?`<div class="storybook-actions">${relation.map(x=>{const n=node(x.id);return n?`<button class="storybook-chip" data-action="cosmos-focus" data-id="${h(n.id)}">${x.type==='required'?'前置 / 后续 · ':x.type==='support'?'条件性帮助 · ':'其他关联 · '}${h(n.title)}</button>`:''}).join('')}</div>`:'<p>暂未记录可确认的直接连接。你可以探索别的知识星球。</p>'}<p class="storybook-quiet">前置关联来自现有知识图谱草案，不能自动等同于所有孩子都必须按此顺序学习。</p></div>
+ ${v48BookNavigation('knowledge',idx)}</div></div>
+ <section class="card"><h2 class="section-title">五大知识星域 · 选择下一站</h2><div class="storybook-actions">${D.knowledgeSections.map((name,i)=>`<button class="storybook-chip ${universeUI.cluster===i?'active':''}" data-action="story-group" data-id="${i}">${h(name)}</button>`).join('')}</div>${g?`<p class="quiet">${h(g)} · ${groupNodes.length}颗知识星球</p><div class="storybook-actions">${groupNodes.map(chip).join('')}</div>`:'<p class="storybook-help">点击任意星域即可展开真实知识节点；不会强制清空当前学习记录。</p>'}</section>`;
+}
+
+function updateStoryLab(v){
+ const n=Math.max(1,Math.min(9,Math.round(Number(v)||3)));universeUI.labSplit=n;
+ const x=100+66*n,right=660-66*n;
+ const attrs=[['storyLabRight','x',x],['storyLabRight','width',right],['storyLabDivider','x1',x],['storyLabDivider','x2',x],['storyLabHit','x',x-20],['storyLabGrip','x',x-12],['storyLabA','x',100+33*n],['storyLabB','x',x+right/2]];
+ attrs.forEach(([id,name,value])=>{const el=$(id);if(el)el.setAttribute(name,String(value))});
+ const g=$('storyLabGripLines');if(g)g.setAttribute('d',`M${x-4} 234v18m8-18v18`);
+ for(const [id,val] of [['storyLabA',`4 × ${n}`],['storyLabB',`4 × ${10-n}`],['storyLabEquation',`4 × ( ${n} + ${10-n} ) = 4 × ${n} + 4 × ${10-n} = 40`],['storyLabLeft',String(4*n)],['storyLabRightVal',String(4*(10-n))]]){let el=$(id);if(el)el.textContent=val}
+ const slider=$('storyLabRange');if(slider)slider.value=String(n);
+}
+
+function setupStoryLab(){
+ const svg=$('storyLabSvg');if(!svg)return;let drag=false;
+ svg.onpointerdown=e=>{if(!e.target.closest('[data-story-lab-handle]'))return;drag=true;try{svg.setPointerCapture(e.pointerId)}catch(_){ }e.preventDefault()};
+ svg.onpointermove=e=>{if(!drag)return;const r=svg.getBoundingClientRect();updateStoryLab(((e.clientX-r.left)/r.width*960-100)/66);};
+ svg.onpointerup=e=>{drag=false;try{svg.releasePointerCapture(e.pointerId)}catch(_){ }};
+ svg.onpointercancel=svg.onpointerup;
+}
+
 function universeLayout(){const groups=D.knowledgeSections,points=[];for(let gi=0;gi<groups.length;gi++){
  let arr=D.nodes.filter(n=>n.module===groups[gi]);const base=gi*2*Math.PI/groups.length-.5*Math.PI;
  arr.forEach((n,j)=>{const spiral=j/Math.max(1,arr.length),a=base+(j%2?1:-1)*(.10+.22*spiral)+(j-((arr.length-1)/2))*.018,r=125+spiral*250, x=550+Math.cos(a)*r,y=390+Math.sin(a)*r*.81;points.push({n,x,y});});}
@@ -526,7 +576,7 @@ function exportBackup(){const blob=new Blob([JSON.stringify({format:'math-growth
 function parseImport(text){let obj=JSON.parse(text);if(obj?.format==='math-growth-v4'&&obj.data?.version===4&&obj.data?.profiles){if(!window.confirm('导入V4备份将替换当前所有本地档案。建议先导出备份。确认继续吗？'))return; db=obj.data;db.active=db.profiles[db.active]?db.active:Object.keys(db.profiles)[0];persist();navigate('profiles');alert('已导入V4备份。');return;}
  if(obj?.version===29&&obj.levels){let name=(obj.profile||'V3.7旧档案').slice(0,20),unique=name,i=1;while(db.profiles[unique])unique=`${name}-${i++}`;let p=profileDefault(unique,Number(String(obj.grade||4).replace(/[^0-9]/g,''))||4);p.legacyArchive=obj;db.profiles[unique]=p;db.active=unique;persist();navigate('profiles');alert('V3.7原始学习记录已保存到新档案。旧记录没有被当作新能力掌握证据。');return;}
  throw new Error('文件格式不符合 V4.1 或 V3.7 的学习记录结构。');}
-function clickAction(el){let act=el.dataset.action,id=el.dataset.id;if(act==='kv-view'){universeUI.view=id;render();return;}if(act==='kv-metro'){universeUI.metro=Number(id);render();return;}if(act==='kv-step'){universeUI.step=Number(id);render();return;}
+function clickAction(el){let act=el.dataset.action,id=el.dataset.id;if(act==='story-turn'||act==='story-goto'){const [k,v]=String(id).split(':');const pages=v48BookPages(k);if(k==='knowledge'){let i=pages.findIndex(x=>x[0]===universeUI.view);let j=act==='story-turn'?Math.max(0,Math.min(pages.length-1,i+Number(v))):Number(v);bookMotion=j<i?'prev':'next';universeUI.view=pages[j][0];}else{let i=pages.findIndex(x=>x[0]===abilityMode),j=act==='story-turn'?Math.max(0,Math.min(pages.length-1,i+Number(v))):Number(v);bookMotion=j<i?'prev':'next';abilityMode=pages[j][0];}render();return;}if(act==='story-group'){universeUI.cluster=Number(id);render();return;}if(act==='story-metro'){universeUI.metro=Number(id);render();return;}if(act==='story-lab-plus'){updateStoryLab((universeUI.labSplit||3)+1);return;}if(act==='kv-view'){universeUI.view=id;render();return;}if(act==='kv-metro'){universeUI.metro=Number(id);render();return;}if(act==='kv-step'){universeUI.step=Number(id);render();return;}
  if(act==='ability-mode'){abilityMode=id;abilityLabStep=0;abilityLabChoice=-1;render();return;}
  if(act==='ability-island'){if(id==='0'){startIntro(route.id,'ability');return;}beginTraining(null,route.id,'ability',id==='3');return;}
  if(act==='ability-lab-choice'){abilityLabChoice=Number(id);render();return;}
