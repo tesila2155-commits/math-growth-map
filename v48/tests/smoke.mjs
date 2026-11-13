@@ -56,12 +56,9 @@ try {
    await snap('ability-'+String(i+1).padStart(2,'0'));
  }
  await page.locator('[data-action="story-goto"][data-id="ability:3"]').click();
- await page.locator('[data-action="ability-lab-next"]').click();
- const labChoices=page.locator('[data-action="ability-lab-choice"]');
- assert((await labChoices.count())>=2);
- await labChoices.first().click();
- await page.locator('[data-action="ability-lab-next"]').click();
- assert.match(await page.locator('.storybook-lab').innerText(),/观察/);
+ await page.locator('[data-action="story-mind-lab"][data-id="1"]').click();
+ assert.equal(await page.locator('#mindLabTiles').count(),1);
+ assert.match(await page.locator('.storybook-lab .active').textContent(),/旋转45°/);
  const localKey=await page.evaluate(()=>Object.keys(localStorage).find(x=>x==='math-growth-v4-students'));
  assert.equal(localKey,'math-growth-v4-students');
 
