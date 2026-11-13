@@ -258,7 +258,7 @@ function nodeDetail(id){let n=node(id);if(!n)return `<div class="empty">找不�
 <section class="card warm"><h2>在这里，我能练什么本领？</h2>${skills.length?`<div class="grid three">${skills.map(id=>{let a=ab(id);return `<button class="tile" data-action="ability" data-id="${id}"><span class="emoji">${a.icon}</span><strong>${h(a.name)}</strong><small>${h(a.kid)}</small></button>`}).join('')}</div>`:'<p class="quiet">这个知识点的能力映射仍在建设。</p>'}<div class="actions">${n.ready?`<button class="button" data-action="start-node" data-id="${id}">开始这个知识点的能力训练</button>`:`<button class="button" disabled>本节点训练题库建设中</button>`}<button class="button ghost" data-action="nav" data-page="knowledge">返回知识地图</button></div>${n.ready?`<p class="quiet">这里有30道按六阶段设计的候选题，系统每次选出少量任务，不需要一次做完。你已完成${completed.length}次练习。</p>`:''}</section>
 <section class="card"><h2 class="section-title">知识关系审查说明</h2><div class="subtle-note">严格必要的关系、条件性帮助、结构相似和待验证关系，在正式完成证据审查前不会被系统当作“你必须先完成”的强制门槛。</div></section>`;}
 
-let abilityMode='hurdle',abilityLabStep=0,abilityLabChoice=-1,abilityScene=0,bookMotion='next';
+let abilityMode='hurdle',abilityLabStep=0,abilityLabChoice=-1,abilityScene=0,abilityStage=0,mindLabOffset={x:0,y:0},bookMotion='next';
 function v48AbilityHurdle(a,done){
  const pts=[[139,377],[358,308],[574,230],[779,150]];
  const track='<path d="M-30 433 C160 490 140 293 312 343 S510 402 581 240 S775 312 991 113" stroke="#dbe7d1" stroke-width="116" fill="none" stroke-linecap="round"/><path d="M-30 433 C160 490 140 293 312 343 S510 402 581 240 S775 312 991 113" stroke="#edba96" stroke-width="91" fill="none" stroke-linecap="round"/><path d="M-30 433 C160 490 140 293 312 343 S510 402 581 240 S775 312 991 113" stroke="#fff9e9" stroke-width="2.3" fill="none" stroke-dasharray="12 16" opacity=".75"/>';
