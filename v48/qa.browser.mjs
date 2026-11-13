@@ -40,14 +40,12 @@ const exercise=async(width,height,name)=>{
   assert.equal(await page.locator('[data-book-stage="ability"] .storybook-illustration svg').count(),1);
  }
  await page.locator('[data-action="story-goto"][data-id="ability:0"]').click();
- await page.locator('[data-book-stage="ability"] [data-action="ability-hurdle"]').first().click();
+ await page.locator('[data-book-stage="ability"] [data-action="story-hurdle"]').first().click();
  assert((await page.locator('[data-book-stage="ability"]').innerText()).includes('开始探索'));
  await page.locator('[data-action="story-goto"][data-id="ability:3"]').click();
- await page.locator('[data-action="ability-lab-next"]').click();
- assert((await page.locator('[data-action="ability-lab-choice"]').count())>=2);
- await page.locator('[data-action="ability-lab-choice"]').first().click();
- await page.locator('[data-action="ability-lab-next"]').click();
- assert((await page.locator('[data-book-stage="ability"]').innerText()).includes('观察'));
+ await page.locator('[data-action="story-mind-lab"][data-id="1"]').click();
+ assert.equal(await page.locator('#mindLabTiles').count(),1);
+ assert((await page.locator('[data-book-stage="ability"]').innerText()).includes('旋转45°'));
  const html=await page.locator('#view').innerHTML();
  assert(!html.includes('undefined'),'UI contains undefined marker');
  await page.close();
