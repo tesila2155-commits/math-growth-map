@@ -252,7 +252,7 @@ function nodeDetail(id){let n=node(id);if(!n)return `<div class="empty">找不�
 <section class="card warm"><h2>在这里，我能练什么本领？</h2>${skills.length?`<div class="grid three">${skills.map(id=>{let a=ab(id);return `<button class="tile" data-action="ability" data-id="${id}"><span class="emoji">${a.icon}</span><strong>${h(a.name)}</strong><small>${h(a.kid)}</small></button>`}).join('')}</div>`:'<p class="quiet">这个知识点的能力映射仍在建设。</p>'}<div class="actions">${n.ready?`<button class="button" data-action="start-node" data-id="${id}">开始这个知识点的能力训练</button>`:`<button class="button" disabled>本节点训练题库建设中</button>`}<button class="button ghost" data-action="nav" data-page="knowledge">返回知识地图</button></div>${n.ready?`<p class="quiet">这里有30道按六阶段设计的候选题，系统每次选出少量任务，不需要一次做完。你已完成${completed.length}次练习。</p>`:''}</section>
 <section class="card"><h2 class="section-title">知识关系审查说明</h2><div class="subtle-note">严格必要的关系、条件性帮助、结构相似和待验证关系，在正式完成证据审查前不会被系统当作“你必须先完成”的强制门槛。</div></section>`;}
 
-let abilityMode='hurdle',abilityLabStep=0,abilityLabChoice=-1;
+let abilityMode='hurdle',abilityLabStep=0,abilityLabChoice=-1,abilityScene=0;
 function v48AbilityHurdle(a,done){
  const pts=[[139,377],[358,308],[574,230],[779,150]];
  const track='<path d="M-30 433 C160 490 140 293 312 343 S510 402 581 240 S775 312 991 113" stroke="#dbe7d1" stroke-width="116" fill="none" stroke-linecap="round"/><path d="M-30 433 C160 490 140 293 312 343 S510 402 581 240 S775 312 991 113" stroke="#edba96" stroke-width="91" fill="none" stroke-linecap="round"/><path d="M-30 433 C160 490 140 293 312 343 S510 402 581 240 S775 312 991 113" stroke="#fff9e9" stroke-width="2.3" fill="none" stroke-dasharray="12 16" opacity=".75"/>';
@@ -295,31 +295,37 @@ function v48AbilityTimeline(a,arr){
 }
 
 function abilityViews(id){
- const a=ab(id),arr=attemptsOfAbility(id).slice().sort((x,y)=>x.timestamp-y.timestamp);
+ const a=ab(id),arr=attemptsOfAbility(id).slice().sort((x,y)=>x.timestamp-y.timestamp),pages=v48BookPages('ability'),idx=Math.max(0,pages.findIndex(x=>x[0]===abilityMode)),mode=pages[idx][0];
  const done=[!!cur().introduced[id]||arr.length>0,arr.some(x=>x.firstCorrect),arr.some(x=>x.stage===6&&x.firstCorrect),arr.some(x=>x.isDelayed&&x.firstCorrect)];
- const labels=[['hurdle','🏃 跨栏赛道'],['tree','🌳 进化树'],['island','🏝️ 挑战岛'],['lab','🔬 实验室'],['transfer','🗺️ 迁移冒险'],['timeline','📈 时间轴']];
- const tabs='<div class="ability-tabs">'+labels.map(([key,label])=>'<button data-action="ability-mode" data-id="'+key+'" class="'+(abilityMode===key?'active':'')+'">'+label+'</button>').join('')+'</div>';
- const stages=['开始探索','独立完成','迁移应用','延迟复测'];
- let body='';
- if(abilityMode==='hurdle'){
-  body='<h2>🏃 能力跨栏赛道</h2><p>跨栏代表不同的学习证据，不是题量排名。</p><div class="ability-steps">'+stages.map((v,i)=>'<div class="ability-step '+(done[i]?'done':'')+'"><div style="font-size:25px">'+(done[i]?'🏅':'○')+'</div>'+v+'</div>').join('')+'</div><button class="button" data-action="start-ability" data-id="'+id+'">开始真实挑战</button>';
- }else if(abilityMode==='tree'){
-  body='<h2>🌳 能力进化树</h2><p>观察不同的能力表现方向；不把所有方向强行定义为必要前置。</p><div class="ability-steps">'+a.indicators.map((v,i)=>'<div class="ability-step">🌿 成长方向 '+(i+1)+'<p>'+h(v)+'</p></div>').join('')+'</div><button class="button light" data-action="intro" data-id="'+id+'" data-return="ability">认识本领</button>';
- }else if(abilityMode==='island'){
-  body='<h2>🏝️ 能力挑战岛</h2><p>四座岛屿分别代表探索、独立、迁移和复测。点击进入现有训练。</p><div class="ability-steps">'+stages.map((v,i)=>'<div class="ability-step '+(done[i]?'done':'')+'"><button data-action="ability-island" data-id="'+i+'"><div style="font-size:27px">🏝️</div>'+v+'</button></div>').join('')+'</div>';
- }else if(abilityMode==='lab'){
-  const prompts=[a.kid,a.question,a.feedback],step=abilityLabStep;
-  body='<h2>🔬 思维实验室</h2><p>先观察，再尝试判断，最后解释。这里是概念探索，不记录为正式训练成绩。</p><div class="ability-step"><h3>'+h(prompts[step])+'</h3></div>'+(step===1?'<div class="ability-steps">'+a.choices.map((c,i)=>'<button class="mini" data-action="ability-lab-choice" data-id="'+i+'" style="'+(abilityLabChoice===i?'background:#cce8d4':'')+'">'+h(c)+'</button>').join('')+'</div>':'')+'<div class="actions"><button class="button light" data-action="ability-lab-prev">上一步</button><button class="button" data-action="ability-lab-next">'+(step===2?'重新观察':'下一步')+'</button></div>';
- }else if(abilityMode==='transfer'){
-  const nodes=D.nodes.filter(n=>n.ready&&(n.skills||[]).includes(id)).slice(0,10);
-  body='<h2>🗺️ 迁移冒险</h2><p>去不同的知识情境中试试这项本领。跨情境练习不自动代表已经成功迁移。</p><div class="ability-steps">'+(nodes.length?nodes.map(n=>'<div class="ability-step"><button data-action="node" data-id="'+n.id+'">🧭 '+h(n.title)+'<small style="display:block">'+h(n.module)+'</small></button></div>').join(''):'<p>目前还没有配置可用的跨知识任务。</p>')+'</div>';
+ const related=D.nodes.filter(n=>n.ready&&(n.skills||[]).includes(id)&&n.suggested_grade<=Math.min(6,(abilityGrade||cur().grade)+1)).slice(0,8);
+ let scene='',body='';
+ if(mode==='hurdle'){
+  const names=['开始探索','独立完成','迁移应用','延迟复测'];
+  scene=v48AbilityHurdle(a,done);
+  body=`<div class="storybook-lab"><strong>${h(names[abilityScene%4])}</strong><p class="kv-desc">${['先通过故事和概念挑战认识这种本领；不会因为点击就获得通过记录。','用一组适合当前水平的练习，尝试独立解决问题。','在新结构或新情境里尝试同一种本领，系统将记录实际的迁移题表现。','隔一段时间再回来检验；只有存在真实到期任务时才可以开始复测。'][abilityScene%4]}</p><div class="storybook-actions"><button class="button" data-action="ability-hurdle-start" data-id="${abilityScene%4}">${abilityScene%4===0?'先认识本领':'尝试挑战'} →</button></div></div>`;
+ }else if(mode==='tree'){
+  const i=Math.min(abilityScene,Math.max(0,a.indicators.length-1));
+  scene=v48AbilityTree(a,done);body=`<div class="storybook-lab"><span class="storybook-index">成长方向 ${i+1} / ${a.indicators.length}</span><h3>${h(a.indicators[i])}</h3><p class="storybook-help">这里表现的是不同能力方向，而不是严格线性等级。要获得证据，需要完成真实练习。</p><button class="button light" data-action="start-ability" data-id="${h(id)}">试着练练这项本领 →</button></div>`;
+ }else if(mode==='island'){
+  scene=v48AbilityIslands(a,done);body=`<div class="storybook-lab"><h3>选择一座岛，开始真正的探索</h3><p class="storybook-help">发现岛：认识能力；独立岛：适应性训练；迁移岛：跨情境路线；复测岛：到期题复习。每座岛不依靠装饰性动画来判定通关。</p><div class="storybook-actions">${['发现岛','独立岛','迁移岛','复测岛'].map((v,i)=>`<button class="storybook-chip" data-action="ability-hurdle-start" data-id="${i}">${done[i]?'✦ ':'○ '}${v}</button>`).join('')}</div></div>`;
+ }else if(mode==='lab'){
+  scene=v48AbilityLab(a);
+  const step=abilityLabStep;
+  body=`<div class="storybook-lab"><span class="storybook-index">观察实验 · ${step+1} / 3</span><h3>${h(step===0?a.kid:step===1?a.question:a.feedback)}</h3>${step===1?`<div class="storybook-actions">${a.choices.map((v,i)=>`<button class="storybook-chip ${abilityLabChoice===i?'active':''}" data-action="ability-lab-choice" data-id="${i}">${h(v)}</button>`).join('')}</div>`:''}${step===2?`<p class="storybook-help">${abilityLabChoice===a.correct?'你选对了！这次判断符合题目条件。':'再看看发生了什么变化？先对照关系，再去尝试。'}</p>`:''}<div class="storybook-actions"><button class="button light" data-action="ability-lab-prev">上一步</button><button class="button" data-action="ability-lab-next">${step===2?'重新观察':step===0?'看一看题目':'检验我的想法'} →</button><button class="button light" data-action="start-ability" data-id="${h(id)}">进入正式训练</button></div><p class="storybook-quiet">可旋转的图案仅用于观察表示变换；概念问答用本项能力的真实内容。这不是带自动评分的完整操作实验，不计入成绩。</p></div>`;
+ }else if(mode==='transfer'){
+  scene=v48AbilityTransfer(a,related);
+  body=`<div class="storybook-lab"><h3>把本领带到不同的知识情境</h3><p class="storybook-help">点击地图中的目的地，进入相关知识挑战。观察不同问题里是否出现相同的思维结构；成功迁移必须由实际任务验证。</p><div class="storybook-actions">${related.slice(0,8).map(n=>`<button class="storybook-chip" data-action="node" data-id="${h(n.id)}">${h(n.title)} · ${h(n.module)}</button>`).join('')||'<span>目前还没有适合此能力的跨知识任务。</span>'}</div></div>`;
  }else{
-  const early=arr.find(x=>x.hints>0||!x.firstCorrect),late=early&&arr.find(x=>x.timestamp>early.timestamp&&x.firstCorrect&&x.taskId!==early.taskId);
-  body='<h2>📈 成长时间轴</h2><p>用真实记录看变化，练习数量不是能力总分。</p><div class="ability-steps">'+(arr.length?arr.slice(-8).map(x=>'<div class="ability-step '+(x.firstCorrect?'done':'')+'">'+(x.firstCorrect?'⭐':'👣')+'<small style="display:block">'+dateString(x.timestamp)+'</small></div>').join(''):'还没有练习记录')+'</div><h3>以前的我 · 现在的我</h3>'+(late?'<div class="ability-compare"><div><b>以前</b><p>'+(early.hints?'需要提示':'还没独立完成')+'</p><small>'+dateString(early.timestamp)+'</small></div><div><b>现在</b><p>另一道相关任务独立完成</p><small>'+dateString(late.timestamp)+'</small></div></div>':'<p class="quiet">尚无足够可比证据，先完成练习和复测。</p>');
+  scene=v48AbilityTimeline(a,arr);
+  const prior=arr.find(x=>x.hints>0||!x.firstCorrect),later=prior&&arr.find(x=>x.timestamp>prior.timestamp&&x.taskId!==prior.taskId&&x.firstCorrect);
+  const sample=arr.length?arr.slice(-7)[Math.min(abilityScene,arr.slice(-7).length-1)]:null;
+  body=`<div class="storybook-lab"><h3>我的成长，有真实足迹</h3><div class="storybook-evidence"><div class="storybook-stat"><span>相关尝试</span><strong>${arr.length}</strong></div><div class="storybook-stat"><span>首次独立答对</span><strong>${arr.filter(x=>x.firstCorrect).length}</strong></div><div class="storybook-stat"><span>迁移题正确</span><strong>${arr.filter(x=>x.stage===6&&x.firstCorrect).length}</strong></div></div>${sample?`<p class="storybook-help">选中的记录：${dateString(sample.timestamp)} · ${sample.firstCorrect?'首次独立完成':'仍在探索或需要提示'}</p>`:'<p class="storybook-help">还没有训练记录，第一次尝试之后就能留下自己的脚印。</p>'}<h3>以前的我 · 现在的我</h3>${later?`<div class="ability-compare"><div><strong>以前</strong><p>${prior.hints>0?'使用过提示':'没有首次独立完成'}</p><small>${dateString(prior.timestamp)}</small></div><div><strong>后来</strong><p>在另一道相关题中首次独立完成</p><small>${dateString(later.timestamp)}</small></div></div>`:'<p class="storybook-quiet">还没有足够的可比较记录。只有真实出现由提示／未独立到另一题独立完成的证据时才生成对比。</p>'}<p class="storybook-quiet">不把次数或一次正确当成可泛化的能力等级。</p></div>`;
  }
- return tabs+'<section class="ability-panel">'+body+'</section>';
+ return `<div class="storybook" data-book-root="ability"><div class="storybook-top"><span class="storybook-brand">MY GROWING ABILITIES · VOL. 02</span><span class="storybook-count">第 ${idx+1} 页 / 共 ${pages.length} 页</span></div>
+ <div class="storybook-shell ${bookMotion==='prev'?'storybook-flip-prev':'storybook-flip-next'}" data-book-stage="ability"><div class="storybook-heading"><div><span class="storybook-index">${h(a.name)} · CHAPTER ${String(idx+1).padStart(2,'0')}</span><h2>${h(pages[idx][1])}</h2><p>${h(pages[idx][2])}</p></div><span class="storybook-count">${idx+1} / ${pages.length}</span></div>
+ <div class="storybook-illustration">${scene}</div>${body}
+ ${v48BookNavigation('ability',idx)}</div></div>`;
 }
-
 function abilities(){let groups=[...new Set(D.abilities.map(a=>a.group))];return `<div class="heading-kicker">ABILITY MAP</div><h1 class="hero">发现我的新本领</h1>${gradeSelector(abilityGrade||cur().grade)}<div class="kid-helper"><span class="face">🏃</span><div><strong>一起发现自己的新本领</strong><p>可以自由挑选一项本领。先弄懂，再挑战，最后试试能不能独立完成新问题。</p></div></div>${groups.map(g=>`<section class="section-group"><h2 class="section-title">${h(g)}</h2><div class="grid three">${D.abilities.filter(a=>a.group===g).map(a=>{let st=abilityEvidence(a.id);return `<button class="tile ability-card" data-action="ability" data-id="${a.id}"><span class="emoji">${a.icon}</span><strong>${h(a.name)}</strong><span class="kid">${h(a.kid)}</span><span class="pill ${cur().introduced[a.id]?'':'amber'}">${cur().introduced[a.id]?'我认识它了':'先来认识它'}</span></button>`}).join('')}</div></section>`).join('')}`;}
 function abilityEvidence(id){let ar=attemptsOfAbility(id),primary=ar.filter(x=>x.primary===id);return {count:ar.length,primary:primary.length,independent:ar.filter(x=>x.firstCorrect).length,withHint:ar.filter(x=>x.hints>0).length,structure:ar.filter(x=>x.stage===3 && x.correct).length,transfer:ar.filter(x=>x.stage===6 && x.correct).length,delayed:ar.filter(x=>x.isDelayed && x.correct).length};}
 function v48AbilityScene(mode,a,arr,done){
@@ -382,9 +388,14 @@ function v48AbilityBook(id){
  <section class="card"><div class="row"><h2 class="section-title">认真认识这项本领</h2><button class="button light" data-action="intro" data-id="${a.id}" data-return="ability">听姐姐讲一讲 →</button></div><p>${h(a.definition)}</p><p class="quiet">训练系统会根据相关知识与练习历史给出挑战，这些场景是能力发展的不同观察方式，不是六套相互独立的考试。</p></section>`;
 }
 
-function abilityDetail(id){return v48AbilityBook(id)}
-let abilityStage=0;
-let bookMotion='next';
+function abilityDetail(id){
+ const a=ab(id);if(!a)return '<div class="empty">能力不存在。</div>';
+ const ev=abilityEvidence(id),related=D.nodes.filter(n=>n.ready&&(n.skills||[]).includes(id)&&n.suggested_grade<=Math.min(6,(abilityGrade||cur().grade)+1));
+ return `<div class="heading-kicker">ABILITY · GROWING BY DISCOVERY</div><div class="row"><h1 class="hero">${h(a.icon)} ${h(a.name)}</h1><span class="pill">${h(a.group)}</span></div><p class="lead">${h(a.kid)}。不用和别人比快慢，找到适合自己的挑战就很好。</p>${gradeSelector(abilityGrade||cur().grade)}
+ ${abilityViews(id)}
+ <details class="card"><summary style="cursor:pointer;font-weight:800;color:#385e4b;padding:8px">认识这项本领 · 学习提示和能力观察标准</summary><p class="lead">${h(a.definition)}</p><p>${h(a.why)}</p><div class="actions"><button class="button light" data-action="intro" data-id="${h(id)}" data-return="ability">先听姐姐讲一讲</button><button class="button" data-action="start-ability" data-id="${h(id)}">开始正式训练</button></div><div class="stack">${a.indicators.map((v,i)=>`<div class="dotted"><strong>发展方向 ${i+1}</strong><p>${h(v)}</p></div>`).join('')}</div></details>
+ <details class="card"><summary style="cursor:pointer;font-weight:800;color:#385e4b;padding:8px">练习证据与相关知识 · 展开详细记录</summary><div class="report-stats"><div class="metric"><strong>${ev.count}</strong><small>相关任务尝试</small></div><div class="metric"><strong>${ev.independent}</strong><small>首次独立答对</small></div><div class="metric"><strong>${ev.transfer}</strong><small>迁移任务正确</small></div></div><p class="quiet">${ev.count?`${ev.withHint}次任务使用过提示；${ev.delayed}次延迟复测通过。`:'目前还没有练习记录。'} 这是学习证据，不是能力标签。</p><div class="storybook-actions">${related.map(n=>`<button class="storybook-chip" data-action="node" data-id="${h(n.id)}">${h(n.title)}</button>`).join('')||'<p>暂无相关可训练知识节点。</p>'}</div></details>`;
+}
 function startIntro(id,returnTo){route={page:'intro',id,returnTo:returnTo||'ability',step:0,selected:null,checked:false};render();}
 function introPage(){
  const a=ab(route.id);if(!a)return '<div class="empty">找不到这项本领。</div>';let u=a.universal||{},step=route.step||0;
@@ -708,7 +719,10 @@ function exportBackup(){const blob=new Blob([JSON.stringify({format:'math-growth
 function parseImport(text){let obj=JSON.parse(text);if(obj?.format==='math-growth-v4'&&obj.data?.version===4&&obj.data?.profiles){if(!window.confirm('导入V4备份将替换当前所有本地档案。建议先导出备份。确认继续吗？'))return; db=obj.data;db.active=db.profiles[db.active]?db.active:Object.keys(db.profiles)[0];persist();navigate('profiles');alert('已导入V4备份。');return;}
  if(obj?.version===29&&obj.levels){let name=(obj.profile||'V3.7旧档案').slice(0,20),unique=name,i=1;while(db.profiles[unique])unique=`${name}-${i++}`;let p=profileDefault(unique,Number(String(obj.grade||4).replace(/[^0-9]/g,''))||4);p.legacyArchive=obj;db.profiles[unique]=p;db.active=unique;persist();navigate('profiles');alert('V3.7原始学习记录已保存到新档案。旧记录没有被当作新能力掌握证据。');return;}
  throw new Error('文件格式不符合 V4.1 或 V3.7 的学习记录结构。');}
-function clickAction(el){let act=el.dataset.action,id=el.dataset.id;if(act==='story-hurdle'){abilityStage=Number(id);render();return;}if(act==='story-ability-branch'){abilityStage=Number(id);render();return;}if(act==='story-island'){if(id==='0')startIntro(route.id,'ability');else beginTraining(null,route.id,'ability',id==='3');return;}if(act==='story-mind-lab'){abilityLabStep=Number(id);render();return;}if(act==='story-turn'||act==='story-goto'){const [k,v]=String(id).split(':');const pages=v48BookPages(k);if(k==='knowledge'){let i=pages.findIndex(x=>x[0]===universeUI.view);let j=act==='story-turn'?Math.max(0,Math.min(pages.length-1,i+Number(v))):Number(v);bookMotion=j<i?'prev':'next';universeUI.view=pages[j][0];}else{let i=pages.findIndex(x=>x[0]===abilityMode),j=act==='story-turn'?Math.max(0,Math.min(pages.length-1,i+Number(v))):Number(v);bookMotion=j<i?'prev':'next';abilityMode=pages[j][0];}render();return;}if(act==='story-group'){universeUI.cluster=Number(id);render();return;}if(act==='story-metro'){universeUI.metro=Number(id);render();return;}if(act==='story-lab-plus'){updateStoryLab((universeUI.labSplit||3)+1);return;}if(act==='kv-view'){universeUI.view=id;render();return;}if(act==='kv-metro'){universeUI.metro=Number(id);render();return;}if(act==='kv-step'){universeUI.step=Number(id);render();return;}
+function clickAction(el){let act=el.dataset.action,id=el.dataset.id;if(act==='ability-hurdle'){abilityScene=Number(id);render();return;}
+ if(act==='ability-branch'){abilityScene=Number(id);render();return;}
+ if(act==='ability-time-event'){abilityScene=Number(id);render();return;}
+ if(act==='ability-hurdle-start'){const i=Number(id);if(i===0){startIntro(route.id,'ability');return;}if(i===1){beginTraining(null,route.id,'ability',false);return;}if(i===2){abilityMode='transfer';bookMotion='next';render();return;}const due=getDue().filter(t=>t.primary===route.id||t.secondary===route.id);if(due.length){beginTraining(null,route.id,'ability',true);}else{alert('这项本领暂时没有到期的复测题。可以先去其他岛屿探索。');}return;}if(act==='story-hurdle'){abilityStage=Number(id);render();return;}if(act==='story-ability-branch'){abilityStage=Number(id);render();return;}if(act==='story-island'){if(id==='0')startIntro(route.id,'ability');else beginTraining(null,route.id,'ability',id==='3');return;}if(act==='story-mind-lab'){abilityLabStep=Number(id);render();return;}if(act==='story-turn'||act==='story-goto'){const [k,v]=String(id).split(':');const pages=v48BookPages(k);if(k==='knowledge'){let i=pages.findIndex(x=>x[0]===universeUI.view);let j=act==='story-turn'?Math.max(0,Math.min(pages.length-1,i+Number(v))):Number(v);bookMotion=j<i?'prev':'next';universeUI.view=pages[j][0];}else{let i=pages.findIndex(x=>x[0]===abilityMode),j=act==='story-turn'?Math.max(0,Math.min(pages.length-1,i+Number(v))):Number(v);bookMotion=j<i?'prev':'next';abilityMode=pages[j][0];}render();return;}if(act==='story-group'){universeUI.cluster=Number(id);render();return;}if(act==='story-metro'){universeUI.metro=Number(id);render();return;}if(act==='story-lab-plus'){updateStoryLab((universeUI.labSplit||3)+1);return;}if(act==='kv-view'){universeUI.view=id;render();return;}if(act==='kv-metro'){universeUI.metro=Number(id);render();return;}if(act==='kv-step'){universeUI.step=Number(id);render();return;}
  if(act==='ability-mode'){abilityMode=id;abilityLabStep=0;abilityLabChoice=-1;render();return;}
  if(act==='ability-island'){if(id==='0'){startIntro(route.id,'ability');return;}beginTraining(null,route.id,'ability',id==='3');return;}
  if(act==='ability-lab-choice'){abilityLabChoice=Number(id);render();return;}
