@@ -406,6 +406,84 @@ function knowledgeSix(){
  if(m==='skilltree'){const items=n?[n,...unique(down).slice(0,14).map(x=>node(x.id))]:nodes.slice(0,16);return `<div class="kv-panel"><h2>🎮 知识技能树</h2><p>用真实练习证据显示星球状态，不强制按单一路线解锁。</p><div class="kv-row">${items.filter(Boolean).map(x=>btn(x.id,knowledgeLit(x.id)?'有点亮证据':'可探索')).join('')}</div>${n?`<button class="button" data-action="node" data-id="${n.id}">挑战这颗星球 →</button>`:''}</div>`}
  return '';
 }
+function v48Defs(dark=false){return `<defs>
+<linearGradient id="v48sky" x2=".22" y2="1"><stop stop-color="${dark?'#101a38':'#d4ebea'}"/><stop offset=".6" stop-color="${dark?'#183b51':'#eaf5eb'}"/><stop offset="1" stop-color="${dark?'#0b192b':'#dce9d9'}"/></linearGradient>
+<linearGradient id="v48earth" x2=".5" y2="1"><stop stop-color="#b9dbb9"/><stop offset="1" stop-color="#6d9a87"/></linearGradient>
+<linearGradient id="v48wood" x2="1" y2="1"><stop stop-color="#a4c0a8"/><stop offset=".5" stop-color="#6a957f"/><stop offset="1" stop-color="#376951"/></linearGradient>
+<linearGradient id="v48gold" x2="1" y2="1"><stop stop-color="#fff5cd"/><stop offset="1" stop-color="#e6bb74"/></linearGradient>
+<linearGradient id="v48mint" x2="1" y2="1"><stop stop-color="#ecfff1"/><stop offset="1" stop-color="#9dd4af"/></linearGradient>
+<radialGradient id="v48halo"><stop stop-color="#e8fff0" stop-opacity=".72"/><stop offset="1" stop-color="#e8fff0" stop-opacity="0"/></radialGradient>
+<filter id="v48shadow" x="-45%" y="-55%" width="190%" height="220%"><feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#28533a" flood-opacity=".18"/></filter>
+<filter id="v48glow"><feGaussianBlur stdDeviation="13"/></filter>
+<pattern id="v48dots" width="34" height="34" patternUnits="userSpaceOnUse"><circle cx="5" cy="5" r="1" fill="#fff" opacity=".48"/></pattern>
+</defs>`}
+
+function v48Land(kind='green'){
+ let dark=kind==='night';return `<rect width="960" height="500" fill="url(#v48sky)"/><rect width="960" height="500" fill="url(#v48dots)" opacity=".45"/><circle cx="777" cy="92" r="42" fill="${dark?'#f0eac5':'#fff5d4'}" opacity=".8"/><circle cx="777" cy="92" r="91" fill="url(#v48halo)" opacity=".65"/>
+<path d="M0 326 C115 278 224 324 351 278 S615 297 960 234 V500 H0" fill="${dark?'#365b61':'#c5e1d2'}" opacity=".65"/>
+<path d="M0 366 Q235 315 412 361 T960 326 V500 H0" fill="${dark?'#254d52':'#a6cdb7'}" opacity=".68"/>
+<path d="M0 421 C182 395 300 455 476 413 S789 425 960 384 V500 H0" fill="${dark?'#1f444a':'#81b39a'}" opacity=".47"/>
+${Array.from({length:23},(_,i)=>{const x=(i*197+45)%950,y=370+(i*43)%105;return `<path d="M${x} ${y}v-13m-5 7 5-10 5 10" stroke="${dark?'#89b9a9':'#4f9976'}" stroke-width="2" stroke-linecap="round" opacity=".45"/>`}).join('')}`}
+
+function v48StoryNode(id,x,y,opts={}){
+ const n=node(id);if(!n)return '';const active=id===universeState.selected,lit=knowledgeLit(id),r=opts.r||31;
+ const color=lit?'#d5f4c9':active?'#ffe8b2':'#f7fff6',lab=h(n.title.length>10?n.title.slice(0,9)+'…':n.title);
+ return `<g class="story-node" data-action="cosmos-focus" data-id="${h(id)}" tabindex="0" role="button" aria-label="查看${h(n.title)}" style="cursor:pointer">
+ <circle cx="${x}" cy="${y}" r="${r+12}" fill="url(#v48halo)" opacity=".6"/>
+ <circle cx="${x}" cy="${y}" r="${r+3}" fill="${active?'#e7bc7d':'#8ab89a'}" opacity=".33"/>
+ <circle cx="${x}" cy="${y}" r="${r}" fill="${color}" stroke="${active?'#e9aa68':'#83b69b'}" stroke-width="${active?3:2}" filter="url(#v48shadow)"/>
+ <ellipse cx="${x-r*.18}" cy="${y-r*.35}" rx="${r*.52}" ry="${r*.23}" fill="#fff" opacity=".49" transform="rotate(-25 ${x} ${y})"/>
+ <text x="${x}" y="${y+5}" text-anchor="middle" font-size="${r<26?11:13}" fill="#365d4a" font-weight="700">${lab}</text></g>`}
+
+function v48Relations(id){
+ const n=node(id);if(!n)return {up:[],down:[],others:[]};
+ const up=[...(n.required_prerequisites||[]).map(id=>({id,type:'required'})),...(n.conditional_support||[]).map(id=>({id,type:'support'}))];
+ const down=D.nodes.filter(x=>(x.required_prerequisites||[]).includes(id)||(x.conditional_support||[]).includes(id)).map(x=>({id:x.id,type:(x.required_prerequisites||[]).includes(id)?'required':'support'}));
+ const others=D.edges.filter(e=>e.from===id||e.to===id).map(e=>({id:e.from===id?e.to:e.from,type:'related'}));
+ const unique=x=>[...new Map(x.filter(v=>node(v.id)&&v.id!==id).map(v=>[v.id,v])).values()];
+ return {up:unique(up),down:unique(down),others:unique(others)};
+}
+
+function v48Tree(focus,rel){
+ const ups=rel.up.slice(0,4),downs=rel.down.slice(0,5),rootY=406,centerY=280,topY=135;
+ let c=ups.map((n,i)=>{let x=140+(i+.5)*(680/Math.max(1,ups.length));return `<path d="M460 310 Q${x} 362 ${x} ${rootY-15}" fill="none" stroke="${n.type==='required'?'#6e9a73':'#c19b70'}" stroke-width="${n.type==='required'?8:5}" ${n.type==='support'?'stroke-dasharray="9 7"':''} opacity=".78"/>${v48StoryNode(n.id,x,rootY,{r:32})}`}).join('');
+ let b=downs.map((n,i)=>{let x=96+(i+.5)*(770/Math.max(1,downs.length));return `<path d="M460 275 C${x} 241 ${x} 190 ${x} ${topY+30}" fill="none" stroke="${n.type==='required'?'#6c9875':'#c6a071'}" stroke-width="${n.type==='required'?8:5}" ${n.type==='support'?'stroke-dasharray="8 8"':''} opacity=".8"/>${v48StoryNode(n.id,x,topY,{r:33})}`}).join('');
+ const leaves=Array.from({length:32},(_,i)=>{let x=(i*131+70)%900,y=95+(i*49)%250;return `<ellipse cx="${x}" cy="${y}" rx="${i%3?10:15}" ry="${i%3?6:10}" fill="${['#c4d9a6','#9fc8a4','#e6d99d'][i%3]}" opacity=".46" transform="rotate(${i*41%180} ${x} ${y})"/>`}).join('');
+ return `<svg viewBox="0 0 960 500" role="img" aria-label="${h(focus.title)}的上下游知识生长图">${v48Defs()}${v48Land()}<ellipse cx="470" cy="478" rx="306" ry="35" fill="#69977d" opacity=".22"/><path d="M420 486 Q448 402 452 329 L452 262 Q460 248 473 266 L478 332 Q483 407 516 486Z" fill="url(#v48wood)" stroke="#56826b" stroke-width="3"/><path d="M463 275 C455 348 462 433 480 473" fill="none" stroke="#d7e7b3" stroke-width="4" opacity=".38"/><ellipse cx="458" cy="188" rx="304" ry="137" fill="#8fc399" opacity=".21"/>${leaves}${c}${b}${v48StoryNode(focus.id,460,280,{r:55})}<text x="460" y="50" text-anchor="middle" fill="#507b63" font-size="15" font-weight="700">枝梢 · 可能的后续发展</text><text x="460" y="480" text-anchor="middle" fill="#365c49" font-size="14">根部 · 已记录的相关基础</text></svg>`}
+
+function v48Ladder(focus,rel){
+ let list=[...rel.up.slice(0,2).map(x=>x.id),focus.id,...rel.down.slice(0,2).map(x=>x.id)];
+ list=[...new Set(list)];const count=list.length;const start=130+(5-count)*54;
+ const steps=list.map((id,i)=>{let x=start+i*152,y=337-i*51,w=123,h=40,lit=knowledgeLit(id),active=id===focus.id;
+  return `<g class="story-node" tabindex="0" role="button" data-action="cosmos-focus" data-id="${h(id)}" aria-label="前往${h(node(id).title)}" style="cursor:pointer"><ellipse cx="${x+60}" cy="${y+70}" rx="65" ry="14" fill="#3e7458" opacity=".13"/><path d="M${x} ${y}l41 -20h123l-41 20z" fill="${active?'#ffe0ac':'#e9f5d9'}" stroke="#b3cbb3"/><path d="M${x} ${y}h123v39H${x}z" fill="${active?'#e3b77e':'#93c0a5'}"/><path d="M${x+123} ${y}l41 -20v39l-41 20z" fill="${active?'#c69a67':'#6e9c82'}"/><circle cx="${x+62}" cy="${y-25}" r="23" fill="${lit?'#e1f3c4':'#f7fff7'}" stroke="#8faf91" stroke-width="2"/><text x="${x+62}" y="${y-19}" text-anchor="middle" fill="#3e6850" font-size="15">${i+1}</text><text x="${x+62}" y="${y+21}" text-anchor="middle" fill="#295b41" font-size="11" font-weight="700">${h(node(id).title.slice(0,8))}</text></g>`}).join('');
+ return `<svg viewBox="0 0 960 500" role="img" aria-label="知识发展的阶梯示意">${v48Defs()}${v48Land()}<path d="M83 398Q343 335 535 217T947 70" fill="none" stroke="#fff" stroke-opacity=".75" stroke-width="4" stroke-dasharray="8 14"/>${steps}<g opacity=".74"><path d="M795 158l14 -48 14 48z" fill="#668f77"/><path d="M810 180v-23" stroke="#6c9980" stroke-width="6"/><path d="M838 162l18 -61 18 61z" fill="#7ca68b"/><path d="M857 187v-25" stroke="#659279" stroke-width="7"/></g><text x="472" y="57" text-anchor="middle" font-size="18" fill="#3c6f55" font-weight="700">在不同层次间，寻找越来越丰富的关系</text></svg>`}
+
+function v48Metro(focus,rel){
+ const colors=['#71b6a6','#e6b56e','#8fa9d4','#bd9ccc','#e59b9a'];
+ const rows=D.knowledgeSections.map((name,i)=>{const all=D.nodes.filter(x=>x.module===name),selectedIn=all.some(x=>x.id===focus.id),stops=all.slice(0,6);
+  let y=106+i*79;return `<path d="M65 ${y} C230 ${y-30} 390 ${y+25} 510 ${y} S760 ${y-24} 890 ${y}" stroke="${colors[i]}" stroke-width="${selectedIn?13:9}" opacity="${selectedIn?1:.8}" stroke-linecap="round" fill="none"/><text x="55" y="${y-23}" font-size="15" font-weight="700" fill="#3e7156">${h(name)}</text>`+stops.map((n,j)=>{let x=126+j*142,cy=y+Math.sin((j/5)*Math.PI*2)*7;return `<g class="story-node" data-action="cosmos-focus" data-id="${h(n.id)}" role="button" tabindex="0" style="cursor:pointer"><circle cx="${x}" cy="${cy}" r="${n.id===focus.id?19:13}" fill="${knowledgeLit(n.id)?'#fff4c6':'#fff'}" stroke="${colors[i]}" stroke-width="4"/><circle cx="${x}" cy="${cy}" r="4" fill="${colors[i]}"/><text x="${x}" y="${cy-20}" font-size="11" text-anchor="middle" fill="#385b47">${h(n.title.slice(0,7))}</text></g>`}).join('')}).join('');
+ return `<svg viewBox="0 0 960 500" role="img" aria-label="五条知识线路的交汇地图">${v48Defs()}<rect width="960" height="500" fill="#f3f5e9"/><path d="M0 42Q170 9 330 28T960 0" stroke="#d8e4d2" stroke-width="56" fill="none" opacity=".5"/>${Array.from({length:14},(_,i)=>`<path d="M${i*80} 0v500" stroke="#dce6da" opacity=".35"/>`).join('')}${rows}<rect x="755" y="16" width="188" height="34" rx="17" fill="#ffffff" opacity=".9"/><text x="849" y="37" text-anchor="middle" font-size="12" fill="#57715e">点一座站台 · 追踪知识</text></svg>`}
+
+function v48Network(focus,rel){
+ let ids=[...new Map([...rel.up,...rel.down,...rel.others].map(x=>[x.id,x])).values()].slice(0,11);
+ const colors={required:'#72b293',support:'#d1a873',related:'#99a5c9'};
+ const edges=ids.map((v,i)=>{const ang=-Math.PI/2+i*Math.PI*2/Math.max(1,ids.length),x=480+Math.cos(ang)*340,y=250+Math.sin(ang)*167;return `<path d="M480 250 Q${(x+480)/2+30} ${(y+250)/2-36} ${x} ${y}" fill="none" stroke="${colors[v.type]||colors.related}" stroke-width="3.5" ${v.type==='required'?'':'stroke-dasharray="6 8"'} opacity=".82"/>${v48StoryNode(v.id,x,y,{r:36})}`}).join('');
+ return `<svg viewBox="0 0 960 500" role="img" aria-label="${h(focus.title)}的局部知识关联网络">${v48Defs()}${v48Land()}<g opacity=".35">${Array.from({length:8},(_,i)=>`<circle cx="480" cy="250" r="${72+i*38}" fill="none" stroke="#c0d8bd" stroke-width="1" stroke-dasharray="2 13"/>`).join('')}</g>${edges}${v48StoryNode(focus.id,480,250,{r:64})}<rect x="18" y="18" rx="18" width="218" height="53" fill="#ffffff" opacity=".84"/><text x="30" y="38" font-size="12" fill="#4f8870">● 绿色实线 · 前置关联</text><text x="30" y="56" font-size="12" fill="#9a7d5d">● 虚线 · 其他支持或联系</text></svg>`}
+
+function v48SkillTree(focus,rel){
+ const ids=[focus,...[...rel.down,...rel.up,...rel.others].slice(0,8).map(x=>node(x.id)).filter(Boolean)];
+ const pts=[[477,420],[300,307],[650,307],[162,190],[365,182],[575,180],[797,187],[285,73],[676,80]];
+ let paths=ids.slice(1).map((n,i)=>{const p=pts[i+1],parent=i<2?pts[0]:pts[1+(i%2)];return `<path d="M${parent[0]} ${parent[1]} Q${(p[0]+parent[0])/2} ${(p[1]+parent[1])/2-35} ${p[0]} ${p[1]}" stroke="#6ca389" stroke-width="${knowledgeLit(n.id)?7:4}" stroke-dasharray="${knowledgeLit(n.id)?'none':'6 9'}" fill="none" opacity=".82"/>`}).join('');
+ return `<svg viewBox="0 0 960 500" role="img" aria-label="可探索的知识成长技能树">${v48Defs()}${v48Land('night')}<path d="M477 459V427" stroke="#b7dda9" stroke-width="16" stroke-linecap="round"/>${paths}${ids.map((n,i)=>v48StoryNode(n.id,pts[i][0],pts[i][1],{r:i?33:52})).join('')}<text x="462" y="42" text-anchor="middle" font-size="16" font-weight="700" fill="#def6e2">沿着连接，发现新的知识可能</text></svg>`}
+
+function v48AreaDemo(split){
+ const x=100+660*split/10,left=660*split/10,right=660-left;
+ return `<svg viewBox="0 0 960 500" role="img" aria-label="可以拖动分隔线的乘法分配律面积实验" id="storyLabSvg">${v48Defs()}${v48Land()}<rect x="58" y="31" width="844" height="403" rx="26" fill="#fffefa" stroke="#e2e5d4" stroke-width="2" filter="url(#v48shadow)"/><text x="477" y="71" text-anchor="middle" fill="#60856c" font-size="18" font-weight="700">面积研究室 · 把一个整体分成两部分</text>
+<rect x="100" y="117" width="660" height="236" fill="#a8d6ba" stroke="#5e9d7b" stroke-width="4" rx="4"/><rect id="storyLabRight" x="${x}" y="117" width="${right}" height="236" fill="#f2dba6" opacity=".94"/><line id="storyLabDivider" x1="${x}" y1="110" x2="${x}" y2="359" stroke="#d58b57" stroke-width="5"/>
+<g data-story-lab-handle="yes" style="cursor:ew-resize" role="slider" tabindex="0" aria-label="拖动改变分割位置"><rect id="storyLabHit" x="${x-20}" y="102" width="40" height="266" fill="transparent"/><rect id="storyLabGrip" x="${x-12}" y="222" width="24" height="42" rx="11" fill="#fffdf4" stroke="#cd9464" stroke-width="3"/><path id="storyLabGripLines" d="M${x-4} 234v18m8-18v18" stroke="#c48e61" stroke-width="2"/></g>
+<text id="storyLabA" x="${100+left/2}" y="243" text-anchor="middle" fill="#32684e" font-size="26" font-weight="800">4 × ${split}</text><text id="storyLabB" x="${x+right/2}" y="243" text-anchor="middle" fill="#875f37" font-size="26" font-weight="800">4 × ${10-split}</text>
+<text x="430" y="101" text-anchor="middle" font-size="15" fill="#4b6c59">总宽度 10</text><text x="75" y="242" text-anchor="middle" font-size="16" fill="#456b52" transform="rotate(-90 75 242)">高度 4</text><text x="480" y="402" text-anchor="middle" font-size="16" fill="#7c806a">拖动中间的把手，看看两边变化、整体是否变化</text></svg>`}
+
 function universePage(){
  const selected=node(universeState.selected),lit=D.nodes.filter(n=>knowledgeLit(n.id)),groups=D.knowledgeSections,active=universeUI.cluster;
  const groupName=active!==null?groups[active]:null,groupNodes=active!==null?D.nodes.filter(n=>n.module===groupName):[];
