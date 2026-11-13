@@ -840,7 +840,7 @@ document.addEventListener('pointerdown',ev=>{
 document.addEventListener('pointerup',ev=>{
  const g=storyGesture;if(!g||g.id!==ev.pointerId)return;storyGesture=null;
  const dx=ev.clientX-g.x,dy=ev.clientY-g.y;
- if(Math.abs(dx)>75&&Math.abs(dx)>Math.abs(dy)*1.4&&Date.now()-g.at<1500&&Date.now()-storyLastTurn>400){storyLastTurn=Date.now();clickAction({dataset:{action:'story-turn',id:g.kind+':'+(dx<0?1:-1)}});}
+ if(Math.abs(dx)>75&&Math.abs(dx)>Math.abs(dy)*1.4&&Date.now()-g.at<1500&&Date.now()-storyLastTurn>400){storyLastTurn=Date.now();storyMouse=null;clickAction({dataset:{action:'story-turn',id:g.kind+':'+(dx<0?1:-1)}});}
 },{passive:true});
 document.addEventListener('pointercancel',()=>{storyGesture=null},{passive:true});
 /* Mouse fallback: native text selection can cancel pointer gestures on desktop. */
