@@ -831,7 +831,7 @@ document.addEventListener('keydown',ev=>{const el=ev.target.closest('svg [data-a
 
 /* Gesture page turns stay off interactive controls and the zoomable nebula. */
 let storyGesture=null,storyMouse=null,storyLastTurn=0;
-const storyCanTurn=target=>!target.closest('button,input,textarea,select,a,[data-action],[data-story-lab-handle],#cosmosViewport');
+const storyCanTurn=target=>!target.closest('button,input,textarea,select,a,[data-action],[data-story-lab-handle],[data-story-mind-handle],#cosmosViewport');
 document.addEventListener('pointerdown',ev=>{
  const stage=ev.target.closest('[data-book-stage]');
  if(!stage||!storyCanTurn(ev.target))return;
