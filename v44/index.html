@@ -344,11 +344,10 @@ function drawUniverse(){
 }
 function setupUniverse(){drawUniverse();const port=$('cosmosViewport');if(!port)return;const pointers=new Map();let dist=null,travel=0;
  const distance=()=>{const v=[...pointers.values()];return Math.hypot(v[0].x-v[1].x,v[0].y-v[1].y)};
- port.onpointerdown=e=>{pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});if(pointers.size===1)travel=0;if(pointers.size===2)dist=distance();try{port.setPointerCapture(e.pointerId)}catch(_){}};
+ port.onpointerdown=e=>{if(e.target.closest('[data-action]'))return;pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});if(pointers.size===1)travel=0;if(pointers.size===2)dist=distance();try{port.setPointerCapture(e.pointerId)}catch(_){}};
  port.onpointermove=e=>{if(!pointers.has(e.pointerId))return;const old=pointers.get(e.pointerId);pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});let delta=Math.hypot(e.clientX-old.x,e.clientY-old.y);travel+=delta;if(pointers.size===2){const next=distance();if(dist&&next)universeState.zoom=Math.max(.5,Math.min(3,universeState.zoom*next/dist));dist=next;drawUniverse();return;}if(delta<.4)return;let rect=port.getBoundingClientRect();universeState.x+=(e.clientX-old.x)*1100/rect.width;universeState.y+=(e.clientY-old.y)*780/rect.height;drawUniverse();};
  port.onpointerup=e=>{pointers.delete(e.pointerId);dist=null;};port.onpointercancel=port.onpointerup;
- // SVG child nodes are redrawn on every drag; delegate taps using the release coordinates.
- port.addEventListener('click',e=>{if(travel>8){e.preventDefault();e.stopPropagation();travel=0;return;}const hit=e.target.closest('[data-action]');if(hit){e.preventDefault();e.stopPropagation();clickAction(hit);}});
+ // SVG node taps use normal event delegation; only blank-space drags capture pointers.
  port.onwheel=e=>{e.preventDefault();universeState.zoom=Math.max(.5,Math.min(3,universeState.zoom*(e.deltaY<0?1.12:.89)));drawUniverse();};
 }
 
