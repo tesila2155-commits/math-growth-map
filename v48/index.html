@@ -852,18 +852,23 @@ document.addEventListener('keydown',ev=>{const el=ev.target.closest('svg [data-a
 });
 
 /* Gesture page turns stay off interactive controls and the zoomable nebula. */
-let storyGesture=null;
+let storyGesture=null,storyMouse=null,storyLastTurn=0;
+const storyCanTurn=target=>!target.closest('button,input,textarea,select,a,[data-action],[data-story-lab-handle],#cosmosViewport');
 document.addEventListener('pointerdown',ev=>{
  const stage=ev.target.closest('[data-book-stage]');
- if(!stage||ev.target.closest('button,input,textarea,select,a,[data-action],[data-story-lab-handle],#cosmosViewport'))return;
+ if(!stage||!storyCanTurn(ev.target))return;
  storyGesture={id:ev.pointerId,x:ev.clientX,y:ev.clientY,kind:stage.dataset.bookStage,at:Date.now()};
 },{passive:true});
 document.addEventListener('pointerup',ev=>{
  const g=storyGesture;if(!g||g.id!==ev.pointerId)return;storyGesture=null;
  const dx=ev.clientX-g.x,dy=ev.clientY-g.y;
- if(Math.abs(dx)>75&&Math.abs(dx)>Math.abs(dy)*1.4&&Date.now()-g.at<1300)clickAction({dataset:{action:'story-turn',id:g.kind+':'+(dx<0?1:-1)}});
+ if(Math.abs(dx)>75&&Math.abs(dx)>Math.abs(dy)*1.4&&Date.now()-g.at<1500&&Date.now()-storyLastTurn>400){storyLastTurn=Date.now();clickAction({dataset:{action:'story-turn',id:g.kind+':'+(dx<0?1:-1)}});}
 },{passive:true});
 document.addEventListener('pointercancel',()=>{storyGesture=null},{passive:true});
+/* Mouse fallback: native text selection can cancel pointer gestures on desktop. */
+document.addEventListener('mousedown',ev=>{const stage=ev.target.closest('[data-book-stage]');if(!stage||!storyCanTurn(ev.target))return;storyMouse={x:ev.clientX,y:ev.clientY,kind:stage.dataset.bookStage,at:Date.now()};});
+document.addEventListener('mouseup',ev=>{const g=storyMouse;storyMouse=null;if(!g||Date.now()-storyLastTurn<400)return;const dx=ev.clientX-g.x,dy=ev.clientY-g.y;if(Math.abs(dx)>75&&Math.abs(dx)>Math.abs(dy)*1.4&&Date.now()-g.at<1500){storyLastTurn=Date.now();clickAction({dataset:{action:'story-turn',id:g.kind+':'+(dx<0?1:-1)}});}});
+
 document.addEventListener('input',ev=>{if(ev.target.id==='storyLabRange')updateStoryLab(ev.target.value);});
 
 if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',()=>render(),{once:true});}else{render();}
