@@ -808,19 +808,27 @@ document.addEventListener('input',ev=>{if(ev.target.id==='storyLabRange'){update
 
 // V4.8 book gestures: preserve current node and route; ignore interactive drawings.
 let storySwipe=null;
-document.addEventListener('pointerdown',ev=>{
- const stage=ev.target.closest?.('[data-book-stage]');if(!stage)return;
- if(ev.target.closest('button,input,textarea,select,[data-action],[data-story-lab-handle],.cosmos-viewport'))return;
- storySwipe={x:ev.clientX,y:ev.clientY,kind:stage.dataset.bookStage};
-});
-document.addEventListener('pointerup',ev=>{
- if(!storySwipe)return;const swipe=storySwipe;storySwipe=null;
- const dx=ev.clientX-swipe.x,dy=ev.clientY-swipe.y;
- if(Math.abs(dx)>75&&Math.abs(dx)>Math.abs(dy)*1.25){
-  ev.preventDefault();
-  clickAction({dataset:{action:'story-turn',id:swipe.kind+':'+(dx<0?1:-1)}});
+function storySwipeStart(target,x,y){
+ if(!target||typeof target.closest!=='function')return;
+ const stage=target.closest('[data-book-stage]');if(!stage)return;
+ if(target.closest('button,input,textarea,select,[data-action],[data-story-lab-handle],[data-story-mind-handle],.cosmos-viewport'))return;
+ storySwipe={x,y,kind:stage.dataset.bookStage};
+}
+function storySwipeEnd(x,y){
+ const start=storySwipe;storySwipe=null;if(!start)return;
+ const dx=x-start.x,dy=y-start.y;
+ if(Math.abs(dx)>65&&Math.abs(dx)>Math.abs(dy)*1.25){
+  clickAction({dataset:{action:'story-turn',id:start.kind+':'+(dx<0?1:-1)}});
+  return true;
  }
-});
+ return false;
+}
+document.addEventListener('pointerdown',ev=>storySwipeStart(ev.target,ev.clientX,ev.clientY));
+document.addEventListener('pointerup',ev=>{if(storySwipeEnd(ev.clientX,ev.clientY))ev.preventDefault()});
+document.addEventListener('mousedown',ev=>storySwipeStart(ev.target,ev.clientX,ev.clientY));
+document.addEventListener('mouseup',ev=>{if(storySwipeEnd(ev.clientX,ev.clientY))ev.preventDefault()});
+document.addEventListener('touchstart',ev=>{if(ev.touches.length===1)storySwipeStart(ev.target,ev.touches[0].clientX,ev.touches[0].clientY)},{passive:true});
+document.addEventListener('touchend',ev=>{if(ev.changedTouches.length===1&&storySwipeEnd(ev.changedTouches[0].clientX,ev.changedTouches[0].clientY))ev.preventDefault()},{passive:false});
 document.addEventListener('pointercancel',()=>{storySwipe=null});
 document.addEventListener('keydown',ev=>{
  const active=ev.target;
