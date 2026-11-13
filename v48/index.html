@@ -394,14 +394,7 @@ function v48AbilityBook(id){
  <section class="card"><div class="row"><h2 class="section-title">认真认识这项本领</h2><button class="button light" data-action="intro" data-id="${a.id}" data-return="ability">听姐姐讲一讲 →</button></div><p>${h(a.definition)}</p><p class="quiet">训练系统会根据相关知识与练习历史给出挑战，这些场景是能力发展的不同观察方式，不是六套相互独立的考试。</p></section>`;
 }
 
-function abilityDetail(id){
- const a=ab(id);if(!a)return '<div class="empty">能力不存在。</div>';
- const ev=abilityEvidence(id),related=D.nodes.filter(n=>n.ready&&(n.skills||[]).includes(id)&&n.suggested_grade<=Math.min(6,(abilityGrade||cur().grade)+1));
- return `<div class="heading-kicker">ABILITY · GROWING BY DISCOVERY</div><div class="row"><h1 class="hero">${h(a.icon)} ${h(a.name)}</h1><span class="pill">${h(a.group)}</span></div><p class="lead">${h(a.kid)}。不用和别人比快慢，找到适合自己的挑战就很好。</p>${gradeSelector(abilityGrade||cur().grade)}
- ${abilityViews(id)}
- <details class="card"><summary style="cursor:pointer;font-weight:800;color:#385e4b;padding:8px">认识这项本领 · 学习提示和能力观察标准</summary><p class="lead">${h(a.definition)}</p><p>${h(a.why)}</p><div class="actions"><button class="button light" data-action="intro" data-id="${h(id)}" data-return="ability">先听姐姐讲一讲</button><button class="button" data-action="start-ability" data-id="${h(id)}">开始正式训练</button></div><div class="stack">${a.indicators.map((v,i)=>`<div class="dotted"><strong>发展方向 ${i+1}</strong><p>${h(v)}</p></div>`).join('')}</div></details>
- <details class="card"><summary style="cursor:pointer;font-weight:800;color:#385e4b;padding:8px">练习证据与相关知识 · 展开详细记录</summary><div class="report-stats"><div class="metric"><strong>${ev.count}</strong><small>相关任务尝试</small></div><div class="metric"><strong>${ev.independent}</strong><small>首次独立答对</small></div><div class="metric"><strong>${ev.transfer}</strong><small>迁移任务正确</small></div></div><p class="quiet">${ev.count?`${ev.withHint}次任务使用过提示；${ev.delayed}次延迟复测通过。`:'目前还没有练习记录。'} 这是学习证据，不是能力标签。</p><div class="storybook-actions">${related.map(n=>`<button class="storybook-chip" data-action="node" data-id="${h(n.id)}">${h(n.title)}</button>`).join('')||'<p>暂无相关可训练知识节点。</p>'}</div></details>`;
-}
+function abilityDetail(id){const a=ab(id);if(!a)return '<div class="empty">能力不存在。</div>';return v48AbilityBook(id);}
 function startIntro(id,returnTo){route={page:'intro',id,returnTo:returnTo||'ability',step:0,selected:null,checked:false};render();}
 function introPage(){
  const a=ab(route.id);if(!a)return '<div class="empty">找不到这项本领。</div>';let u=a.universal||{},step=route.step||0;
