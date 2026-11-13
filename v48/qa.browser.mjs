@@ -10,7 +10,7 @@ const exercise=async(width,height,name)=>{
  const url=pathToFileURL(resolve('v48/index.html')).href;
  await page.goto(url,{waitUntil:'load'});await page.locator('#view .hero').first().waitFor({timeout:12000});
  assert(!((await page.locator('#view').innerText()).includes('正在打开你的数学地图')),'boot is stuck');
- await page.locator('[data-action="nav"][data-page="universe"]').click();
+ await page.locator('.navitem[data-page="universe"]').click();
  await page.locator('[data-book-root="knowledge"]').waitFor();
  assert.equal(await page.locator('[data-book-stage="knowledge"]').count(),1);
  assert.equal(await page.locator('#cosmosSvg').count(),1);
@@ -31,7 +31,7 @@ const exercise=async(width,height,name)=>{
  assert((await nodes.count())>0,'tree has no clickable nodes');
  await nodes.first().click();
  assert((await page.locator('[data-book-stage="knowledge"]').innerText()).includes('知识生长树'));
- await page.locator('[data-action="nav"][data-page="abilities"]').click();
+ await page.locator('.navitem[data-page="abilities"]').click();
  await page.locator('[data-action="ability"]').first().click();
  assert.equal(await page.locator('[data-book-root="ability"]').count(),1);
  for(let i=0;i<6;i++){
