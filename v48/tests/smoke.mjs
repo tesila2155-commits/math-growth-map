@@ -56,9 +56,12 @@ try {
    await snap('ability-'+String(i+1).padStart(2,'0'));
  }
  await page.locator('[data-action="story-goto"][data-id="ability:3"]').click();
- console.log('ABILITY LAB DEBUG', JSON.stringify({title:await page.locator('.storybook-heading h2').textContent(),buttons:await page.locator('[data-action="story-mind-lab"]').count(),url:page.url(),body:(await page.locator('#view').innerText()).slice(0,650)}));
- await page.locator('[data-action="story-mind-lab"][data-id="1"]').click();
- assert.match(await page.locator('.storybook-lab .active').textContent(),/旋转45°/);
+ await page.locator('[data-action="ability-lab-next"]').click();
+ const labChoices=page.locator('[data-action="ability-lab-choice"]');
+ assert((await labChoices.count())>=2);
+ await labChoices.first().click();
+ await page.locator('[data-action="ability-lab-next"]').click();
+ assert.match(await page.locator('.storybook-lab').innerText(),/观察/);
  const localKey=await page.evaluate(()=>Object.keys(localStorage).find(x=>x==='math-growth-v4-students'));
  assert.equal(localKey,'math-growth-v4-students');
 
