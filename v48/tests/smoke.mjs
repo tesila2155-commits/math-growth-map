@@ -36,11 +36,13 @@ try {
  assert.match(await page.locator('#storyLabEquation').textContent(),/4 × 7/);
  // Swipe left across the heading; should turn one page without changing route.
  await page.locator('[data-action="story-goto"][data-id="knowledge:1"]').click();
+ await page.evaluate(()=>{window.__gestures=[];for(const t of ['pointerdown','pointerup','mousedown','mouseup','pointercancel'])document.addEventListener(t,e=>window.__gestures.push({t,target:e.target.tagName,closest:e.target.closest('[data-book-stage]')?.dataset.bookStage||null,x:e.clientX,y:e.clientY}),true);});
  const box=await page.locator('.storybook-heading').boundingBox();
  await page.mouse.move(box.x+box.width*.8,box.y+box.height*.5);
  await page.mouse.down();
  await page.mouse.move(box.x+box.width*.15,box.y+box.height*.5,{steps:10});
  await page.mouse.up();
+ console.log('SWIPE DEBUG',JSON.stringify(await page.evaluate(()=>({events:window.__gestures,current:document.querySelector('.storybook-heading h2')?.textContent}))));
  assert.match(await page.locator('.storybook-heading h2').textContent(),/知识进化阶梯/);
 
  await page.locator('.navitem[data-page="abilities"]').click();
