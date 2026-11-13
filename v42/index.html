@@ -324,7 +324,7 @@ document.addEventListener('dragstart',ev=>{const x=ev.target.closest('[data-acti
 document.addEventListener('dragover',ev=>{if(ev.target.closest('#dropArea'))ev.preventDefault();});
 document.addEventListener('drop',ev=>{if(!ev.target.closest('#dropArea'))return;ev.preventDefault();let x=document.querySelector(`[data-action="add-piece"][data-index="${dragIndex}"]`);if(x)clickAction(x);dragIndex=null;});
 document.addEventListener('keydown',ev=>{const el=ev.target.closest('svg [data-action]');if(el&&(ev.key==='Enter'||ev.key===' ')){ev.preventDefault();clickAction(el);}});
-render();
+if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',()=>render(),{once:true});}else{render();}
 window.MathGrowthV42={getData:()=>D, getSnapshot:()=>JSON.parse(JSON.stringify(db)),state:()=>({...route})};
 })();
 </script>
