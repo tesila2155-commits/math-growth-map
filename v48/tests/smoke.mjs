@@ -37,6 +37,7 @@ try {
  // Swipe left across the heading; should turn one page without changing route.
  await page.locator('[data-action="story-goto"][data-id="knowledge:1"]').click();
  await page.evaluate(()=>{window.__gestures=[];for(const t of ['pointerdown','pointerup','mousedown','mouseup','pointercancel'])document.addEventListener(t,e=>window.__gestures.push({t,target:e.target.tagName,closest:e.target.closest('[data-book-stage]')?.dataset.bookStage||null,x:e.clientX,y:e.clientY}),true);});
+ await page.locator('.storybook-heading').scrollIntoViewIfNeeded();
  const box=await page.locator('.storybook-heading').boundingBox();
  await page.mouse.move(box.x+box.width*.8,box.y+box.height*.5);
  await page.mouse.down();
